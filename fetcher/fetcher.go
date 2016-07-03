@@ -9,9 +9,10 @@ import (
 	"net/url"
 )
 
-// LoginURL is the endpoint to call for logging in
 var (
-	LoginURL             = "https://www.energiatili.fi/Extranet/Extranet/LogIn"
+	// LoginURL is login request URL
+	LoginURL = "https://www.energiatili.fi/Extranet/Extranet/LogIn"
+	// ConsumptionReportURL consumption data HTML download URL
 	ConsumptionReportURL = "https://www.energiatili.fi/Reporting/CustomerConsumption/UserConsumptionReport"
 )
 
