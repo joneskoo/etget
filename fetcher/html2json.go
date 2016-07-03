@@ -12,12 +12,12 @@ var ErrorDateFormat = errors.New("Error in date format")
 
 const (
 	startData = "var model = "
-	endData = ";"
+	endData   = ";"
 	startDate = "new Date("
-	endDate = ")"
+	endDate   = ")"
 )
 
-// dateConverter replaces "new Date(1234)" with "1234" 
+// dateConverter replaces "new Date(1234)" with "1234"
 func dateConverter(input string) (output string, err error) {
 	pos := 0
 	var buffer bytes.Buffer
@@ -43,7 +43,7 @@ func dateConverter(input string) (output string, err error) {
 		if _, err = buffer.WriteString(input[pos:start]); err != nil {
 			return "", err
 		}
-		if _, err = buffer.WriteString(input[start+len(startDate):end]); err != nil {
+		if _, err = buffer.WriteString(input[start+len(startDate) : end]); err != nil {
 			return "", err
 		}
 		pos = end + 1
@@ -57,7 +57,7 @@ func html2json(data []byte) (json string, err error) {
 	// Find var model = ....
 	start := strings.Index(s, startData)
 	end := start + strings.Index(s[start:], endData)
-	modelData := s[start + len(startData) : end]
+	modelData := s[start+len(startData) : end]
 	// Convert dates to JSON
 	modelData, err = dateConverter(modelData)
 	return modelData, nil

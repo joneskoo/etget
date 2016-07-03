@@ -11,9 +11,9 @@ import (
 )
 
 func main() {
-    // reader := bufio.NewReader(os.Stdin)
-    // fmt.Print("www.energiatili.fi username: ")
-    // username, err := reader.ReadString('\n')
+	// reader := bufio.NewReader(os.Stdin)
+	// fmt.Print("www.energiatili.fi username: ")
+	// username, err := reader.ReadString('\n')
 	// if err != nil {
 	// 	panic(err)
 	// }
@@ -28,7 +28,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	fmt.Println("Logging in…")
 	// err = f.Login(username, string(password))
 	err = f.Login(secrets.Username(), secrets.Password())
