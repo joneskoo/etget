@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"fmt"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -94,11 +95,29 @@ func TestConsumptionReport(t *testing.T) {
 	if err != nil {
 		t.Errorf("Got unexpected error from Login(): %v", err)
 	}
+	// Mock response that looks like the real thing
+	ts.body = `<html>
+<p>Some random stuff here</p>
+Then magically, var model = {"first": "value", "second": new Date(1234)} ;
+More stuff
+</html>`
 	data, err := fetcher.ConsumptionReport()
 	if err != nil {
 		t.Errorf("Got unexpected error from ConsumptionReport(): %v", err)
 	}
-	t.Logf("Got consumption report body: '%v'", string(data))
+	var dat struct{
+		First string `json:"first"`
+		Second int `json:"second"`
+	}
+    if err := json.Unmarshal([]byte(data), &dat); err != nil {
+        t.Errorf("Decoding consumption report as JSON failed")
+    }
+	if dat.First != "value" {
+		t.Errorf("Expected to get JSON with {\"first\":\"value\"}, got %#v", dat)
+	}
+	if dat.Second != 1234 {
+		t.Errorf("Expected to get JSON with {\"second\":1234}, got %#v", dat)
+	}
 }
 
 type testServer struct {

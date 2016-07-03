@@ -51,8 +51,8 @@ func dateConverter(input string) (output string, err error) {
 	return buffer.String(), nil
 }
 
-// HTML2JSON finds an embedded javascript object in HTML and converts timestamps to integers
-func HTML2JSON(data []byte) (json string, err error) {
+// html2json finds an embedded javascript object in HTML and converts timestamps to integers
+func html2json(data []byte) (json string, err error) {
 	s := string(data)
 	// Find var model = ....
 	start := strings.Index(s, startData)

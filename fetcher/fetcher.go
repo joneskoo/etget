@@ -57,10 +57,10 @@ func (f *Fetcher) Login(user, password string) (err error) {
 	return
 }
 
-// ConsumptionReport fetches the actual consumption report data
-func (f *Fetcher) ConsumptionReport() (data []byte, err error) {
+// ConsumptionReport fetches the actual consumption report data (JSON)
+func (f *Fetcher) ConsumptionReport() (data string, err error) {
 	if f.loggedIn == false {
-		return []byte{}, ErrorNotLoggedIn
+		return "", ErrorNotLoggedIn
 	}
 	resp, err := f.cl.Get(ConsumptionReportURL)
 	if err != nil {
@@ -71,7 +71,11 @@ func (f *Fetcher) ConsumptionReport() (data []byte, err error) {
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return "", err
 	}
-	return body, nil
+	data, err = html2json(body)
+	if err != nil {
+		return "", err
+	}
+	return data, nil
 }
