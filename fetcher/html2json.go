@@ -41,7 +41,7 @@ func dateConverter(input string) (output string, err error) {
 		}
 		end += start
 		// Write everything except start and stop markers
-		if fmt.Fprintf(&buffer, `%v"%v"`, input[pos:start], input[start+len(startDate):end]); err != nil {
+		if fmt.Fprintf(&buffer, `%v%v`, input[pos:start], input[start+len(startDate):end]); err != nil {
 			return "", err
 		}
 		pos = end + 1

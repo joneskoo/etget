@@ -14,10 +14,10 @@ func TestDateConverterPositive(t *testing.T) {
 		{in: "no date in string", want: "no date in string"},
 		{in: "no (date in string", want: "no (date in string"},
 		{in: "no )date in string", want: "no )date in string"},
-		{in: "new Date(123)", want: "\"123\""},
-		{in: "asdf, new Date(123), new Date(124), foo", want: "asdf, \"123\", \"124\", foo"},
-		{in: "a adf new Date(123) foo", want: "a adf \"123\" foo"},
-		{in: "\"StartValue\":new Date(1325368800000),\"", want: "\"StartValue\":\"1325368800000\",\""},
+		{in: "new Date(123)", want: "123"},
+		{in: "asdf, new Date(123), new Date(124), foo", want: "asdf, 123, 124, foo"},
+		{in: "a adf new Date(123) foo", want: "a adf 123 foo"},
+		{in: "\"StartValue\":new Date(1325368800000),\"", want: "\"StartValue\":1325368800000,\""},
 		{in: "\"StartValue\":new Date(1325368800000,\"", error: true},
 	}
 

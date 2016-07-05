@@ -109,8 +109,8 @@ More stuff
 		t.Errorf("Got unexpected error from ConsumptionReport(): %v", err)
 	}
 	var dat struct {
-		First  string `json:"first"`
-		Second string `json:"second"`
+		First  string  `json:"first"`
+		Second float64 `json:"second"`
 	}
 	if err := json.Unmarshal(buf.Bytes(), &dat); err != nil {
 		t.Errorf("Decoding consumption report as JSON failed: %v", err)
@@ -119,7 +119,7 @@ More stuff
 	if dat.First != "value" {
 		t.Errorf("Expected to get JSON with {\"first\":\"value\"}, got %#v", dat)
 	}
-	if dat.Second != "1234" {
+	if dat.Second != 1234.0 {
 		t.Errorf("Expected to get JSON with {\"second\":\"1234\"}, got %#v", dat)
 	}
 }

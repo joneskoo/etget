@@ -2,7 +2,6 @@ package fetcher
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"testing"
 )
@@ -23,5 +22,5 @@ func TestModel(t *testing.T) {
 	if err != nil {
 		t.Errorf("Update(): %v", err)
 	}
-	fmt.Printf("%#v\n", report.Hours.Consumptions[0].Series.Data)
+	// fmt.Printf("%#v\n", report.Hours.Consumptions[0].Series.Data)
 }

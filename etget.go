@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/joneskoo/etget/fetcher"
-	"github.com/joneskoo/etget/secrets"
 	// "golang.org/x/crypto/ssh/terminal"
 )
 
@@ -31,7 +30,7 @@ func main() {
 
 	fmt.Println("Logging in…")
 	// err = f.Login(username, string(password))
-	err = f.Login(secrets.Username(), secrets.Password())
+	err = f.Login(username(), password())
 	if err != nil {
 		panic(err)
 	}
