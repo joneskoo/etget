@@ -3,6 +3,7 @@ package fetcher
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ const (
 	endDate   = ")"
 )
 
-// dateConverter replaces "new Date(1234)" with "1234"
+// dateConverter replaces "new Date(1234)" with "\"1234\""
 func dateConverter(input string) (output string, err error) {
 	pos := 0
 	var buffer bytes.Buffer
@@ -40,10 +41,7 @@ func dateConverter(input string) (output string, err error) {
 		}
 		end += start
 		// Write everything except start and stop markers
-		if _, err = buffer.WriteString(input[pos:start]); err != nil {
-			return "", err
-		}
-		if _, err = buffer.WriteString(input[start+len(startDate) : end]); err != nil {
+		if fmt.Fprintf(&buffer, `%v"%v"`, input[pos:start], input[start+len(startDate):end]); err != nil {
 			return "", err
 		}
 		pos = end + 1

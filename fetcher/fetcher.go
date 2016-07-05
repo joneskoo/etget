@@ -3,10 +3,12 @@ package fetcher
 
 import (
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 )
 
 var (
@@ -58,24 +60,26 @@ func (f *Fetcher) Login(user, password string) (err error) {
 }
 
 // ConsumptionReport fetches the actual consumption report data (JSON)
-func (f *Fetcher) ConsumptionReport() (data string, err error) {
+func (f *Fetcher) ConsumptionReport(w io.Writer) (err error) {
 	if f.loggedIn == false {
-		return "", ErrorNotLoggedIn
+		return ErrorNotLoggedIn
 	}
 	resp, err := f.cl.Get(ConsumptionReportURL)
 	if err != nil {
 		return
 	}
 	if resp.StatusCode != http.StatusOK {
-		return data, ErrorStatusCode
+		return ErrorStatusCode
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return err
 	}
-	data, err = html2json(body)
+	data, err := html2json(body)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return data, nil
+	r := strings.NewReader(data)
+	_, err = io.Copy(w, r)
+	return err
 }

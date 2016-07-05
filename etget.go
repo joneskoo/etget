@@ -3,7 +3,7 @@ package main
 import (
 	// "bufio"
 	"fmt"
-	// "os"
+	"os"
 
 	"github.com/joneskoo/etget/fetcher"
 	"github.com/joneskoo/etget/secrets"
@@ -37,9 +37,7 @@ func main() {
 	}
 
 	fmt.Println("Login OK. Downloading consumption data…")
-	json, err := f.ConsumptionReport()
-	if err != nil {
+	if err := f.ConsumptionReport(os.Stdout); err != nil {
 		panic(err)
 	}
-	fmt.Printf("%v\n", string(json))
 }

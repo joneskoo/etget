@@ -1,8 +1,10 @@
 package fetcher
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,7 +25,7 @@ func TestConsumptionReportBeforeLogin(t *testing.T) {
 	if err != nil {
 		t.Error("Failed to initialize fetcher")
 	}
-	_, err = fetcher.ConsumptionReport()
+	err = fetcher.ConsumptionReport(ioutil.Discard)
 	if err != ErrorNotLoggedIn {
 		t.Errorf("Expected ErrorNotLoggedIn, got: error=%v", err)
 	}
@@ -101,22 +103,24 @@ func TestConsumptionReport(t *testing.T) {
 Then magically, var model = {"first": "value", "second": new Date(1234)} ;
 More stuff
 </html>`
-	data, err := fetcher.ConsumptionReport()
+	buf := &bytes.Buffer{}
+	err = fetcher.ConsumptionReport(buf)
 	if err != nil {
 		t.Errorf("Got unexpected error from ConsumptionReport(): %v", err)
 	}
 	var dat struct {
 		First  string `json:"first"`
-		Second int    `json:"second"`
+		Second string `json:"second"`
 	}
-	if err := json.Unmarshal([]byte(data), &dat); err != nil {
-		t.Errorf("Decoding consumption report as JSON failed")
+	if err := json.Unmarshal(buf.Bytes(), &dat); err != nil {
+		t.Errorf("Decoding consumption report as JSON failed: %v", err)
+		t.FailNow()
 	}
 	if dat.First != "value" {
 		t.Errorf("Expected to get JSON with {\"first\":\"value\"}, got %#v", dat)
 	}
-	if dat.Second != 1234 {
-		t.Errorf("Expected to get JSON with {\"second\":1234}, got %#v", dat)
+	if dat.Second != "1234" {
+		t.Errorf("Expected to get JSON with {\"second\":\"1234\"}, got %#v", dat)
 	}
 }
 
