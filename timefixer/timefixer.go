@@ -8,6 +8,7 @@
 package timefixer
 
 import (
+	"fmt"
 	"log"
 	"time"
 )
@@ -15,40 +16,44 @@ import (
 // TimeFixer stores information about the previous timestamp needed
 // for correction
 type TimeFixer struct {
-	prev       time.Time
-	adjustment time.Duration
+	prev time.Time
 }
 
 // ParseBrokenTime parses timestamps statefully and fixes timezone
 func (t *TimeFixer) ParseBrokenTime(localTs float64) (ts time.Time, err error) {
-	// Fix time
-	realTs := time.Unix(int64(localTs/1000), 0).Add(-2 * time.Hour).UTC()
-
-	diff := realTs.Sub(t.prev)
-	t.prev = realTs
-	switch {
-	case t.prev.IsZero() == true:
-		//
-	case diff == 0*time.Hour:
-		// DST backward; following data in standard time
-		log.Printf("WARN: Detected DST backward shift %v\n", realTs)
-		t.adjustment = 0 * time.Hour
-		//realTs = realTs.Add(-1 * time.Hour)
-	case diff == 1*time.Hour:
-		// Normal case
-	case diff == 2*time.Hour:
-		// DST forward, following data in summer time
-		t.adjustment = 1 * time.Hour
-		log.Printf("WARN: Detected DST forward shift %v\n", realTs)
-	case diff == 10*time.Hour || diff == 16*time.Hour:
-		// Day meter vs. Night meter gap
-	default:
-		_, offset := realTs.Local().Zone()
-		t.adjustment = time.Duration(offset/3600-2) * time.Hour
-		log.Printf("WARN: Records missing, now reading %v (got diff=%v)\n", realTs, diff)
+	// Decode "unix" time and ignore time zone
+	realTs := time.Unix(int64(localTs/1000), 0).UTC()
+	year, _, day := realTs.Date()
+	month := realTs.Month()
+	hour, min, sec := realTs.Clock()
+	helsinki, err := time.LoadLocation("Europe/Helsinki")
+	if err != nil {
+		return time.Time{}, err
 	}
 
-	realTs = realTs.Add(-t.adjustment)
+	// Interpret clock time as local time
+	realTs = time.Date(year, month, day, hour, min, sec, 0, helsinki)
 
+	// Compare to previous record; adjust for DST gap
+	diff := realTs.Sub(t.prev)
+	switch diff {
+	case 0 * time.Hour:
+		// DST backward; following data in standard time
+		// This should not happen because local time can be decoded uniquely
+		// to UTC as local time jumps ahead an extra hour
+		realTs = realTs.Add(1 * time.Hour)
+		fmt.Printf("WARN: Compensating DST backward shift %v, this should not happen\n", realTs)
+	case 1 * time.Hour:
+		// Normal case
+	case 2 * time.Hour:
+		// DST forward, following data in summer time
+		realTs = realTs.Add(-1 * time.Hour)
+		fmt.Printf("WARN: Compensating DST forward shift %v\n", realTs)
+	default:
+		if !t.prev.IsZero() {
+			log.Printf("WARN: Records missing, now reading %v (got diff=%v)\n", realTs, diff)
+		}
+	}
+	t.prev = realTs
 	return realTs, nil
 }
