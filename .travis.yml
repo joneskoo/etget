@@ -1,15 +1,10 @@
 language: go
-
 go:
   - 1.6
 
 before_install:
-  - go get github.com/onsi/gomega
-  - go get github.com/onsi/ginkgo
-  - go get golang.org/x/tools/cmd/cover
+    - go get github.com/mattn/goveralls
+    - go get golang.org/x/tools/cmd/cover
 
 script:
-  - ./test.sh
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+      - $HOME/gopath/bin/goveralls -service=travis-ci
