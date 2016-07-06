@@ -8,3 +8,7 @@ echo 'mode: atomic' > coverage.txt
 go list ./... \
     | xargs -I% bash -c 'go test -covermode=atomic -coverprofile=profile.out % && tail -n +2 profile.out >> coverage.txt || true'
 rm -f profile.out
+
+go tool cover -func coverage.txt
+
+goveralls -coverprofile=coverage.txt -service=travis-ci
