@@ -4,9 +4,9 @@ set -e
 
 rm -f coverage.txt profile.out
 
-echo 'mode: atomic' > coverage.txt
+echo 'mode: set' > coverage.txt
 go list ./... \
-    | xargs -I% bash -c 'go test -covermode=atomic -coverprofile=profile.out % && tail -n +2 profile.out >> coverage.txt || true'
+    | xargs -I% bash -c 'go test -coverprofile=profile.out % && tail -n +2 profile.out >> coverage.txt || true'
 rm -f profile.out
 
 go tool cover -func coverage.txt
