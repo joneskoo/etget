@@ -6,5 +6,5 @@ rm -f coverage.txt profile.out
 
 echo 'mode: atomic' > coverage.txt
 go list ./... \
-    | xargs -I% sh -c 'go test -covermode=atomic -coverprofile=profile.out % && tail -n +2 profile.out >> coverage.txt'
+    | xargs -I% bash -c 'go test -covermode=atomic -coverprofile=profile.out % && tail -n +2 profile.out >> coverage.txt || true'
 rm -f profile.out

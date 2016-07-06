@@ -9,16 +9,6 @@ import (
 
 // ConsumptionReport is the structure in 'var model' of Energiatili
 type ConsumptionReport struct {
-	DataInterval struct {
-		Duration   string
-		Start      string
-		Stop       string
-		StartValue string
-		StopValue  string
-		TotalYears int
-		TotalDays  float64
-		TotalHours float64
-	}
 	Hours struct {
 		Temperature struct {
 			RawData [][2]float64 `json:"Data"`
