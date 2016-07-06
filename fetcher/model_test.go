@@ -10,7 +10,7 @@ func TestModel(t *testing.T) {
 	filename := "/Users/joneskoo/go/src/github.com/joneskoo/etget/energiatili.json"
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		panic(err)
+		t.Skip()
 	}
 	var report ConsumptionReport
 	err = json.Unmarshal(data, &report)
