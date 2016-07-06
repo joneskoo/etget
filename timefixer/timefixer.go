@@ -8,6 +8,7 @@
 package timefixer
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -41,8 +42,7 @@ func (t *TimeFixer) ParseBrokenTime(localTs float64) (ts time.Time, err error) {
 		// DST backward; following data in standard time
 		// This should not happen because local time can be decoded uniquely
 		// to UTC as local time jumps ahead an extra hour
-		realTs = realTs.Add(1 * time.Hour)
-		fmt.Printf("WARN: Compensating DST backward shift %v, this should not happen\n", realTs)
+		return time.Time{}, errors.New("Unexpected repeated time record")
 	case 1 * time.Hour:
 		// Normal case
 	case 2 * time.Hour:
