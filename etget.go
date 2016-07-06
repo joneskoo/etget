@@ -1,27 +1,27 @@
 package main
 
 import (
-	// "bufio"
+	"bufio"
 	"fmt"
 	"os"
 
 	"github.com/joneskoo/etget/fetcher"
-	// "golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
-	// reader := bufio.NewReader(os.Stdin)
-	// fmt.Print("www.energiatili.fi username: ")
-	// username, err := reader.ReadString('\n')
-	// if err != nil {
-	// 	panic(err)
-	// }
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("www.energiatili.fi username: ")
+	username, err := reader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
 
-	// fmt.Println("www.energiatili.fi password:")
-	// password, err := terminal.ReadPassword(0)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	fmt.Println("www.energiatili.fi password:")
+	password, err := terminal.ReadPassword(0)
+	if err != nil {
+		panic(err)
+	}
 
 	f, err := fetcher.New()
 	if err != nil {
@@ -29,8 +29,7 @@ func main() {
 	}
 
 	fmt.Println("Logging in…")
-	// err = f.Login(username, string(password))
-	err = f.Login(username(), password())
+	err = f.Login(username, string(password))
 	if err != nil {
 		panic(err)
 	}
