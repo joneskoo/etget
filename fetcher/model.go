@@ -3,8 +3,6 @@ package fetcher
 import (
 	"errors"
 	"time"
-
-	"github.com/joneskoo/etget/timefixer"
 )
 
 // ConsumptionReport is the structure in 'var model' of Energiatili
@@ -48,7 +46,7 @@ type DataPoint struct {
 // Update processes input to a easier-to-parse format.
 // Namely RawData under Consumptions is parsed to Data with UTC timestamps.
 func (c *ConsumptionReport) Update() (err error) {
-	fixer := timefixer.TimeFixer{}
+	fixer := TimeFixer{}
 	for i, cons := range c.Hours.Consumptions {
 		count := len(cons.Series.RawData)
 		c.Hours.Consumptions[i].Series.Data = make([]DataPoint, count)

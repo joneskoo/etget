@@ -1,4 +1,4 @@
-package timefixer
+package fetcher
 
 import (
 	"testing"
