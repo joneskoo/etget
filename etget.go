@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,12 +12,13 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-const (
+var (
 	// CredentialsFile is the file name where credentials are stored
-	CredentialsFile = "./credentials.json"
+	CredentialsFile = flag.String("credfile", "./credentials.json",
+		"File username/password are saved in (plaintext)")
 
 	// OutputFile is the name of the file where we write output
-	OutputFile = "./power.json"
+	OutputFile = flag.String("output", "./power.json", "File consumption data is written in")
 )
 
 type credentials struct {
@@ -71,9 +73,10 @@ func writeCachedCredentials(filename, username, password string) (err error) {
 }
 
 func main() {
-	username, password, err := readCachedCredentials(CredentialsFile)
+	flag.Parse()
+	username, password, err := readCachedCredentials(*CredentialsFile)
 	if err != nil {
-		log.Println("Could not find cached credentials in", CredentialsFile)
+		log.Println("Could not find cached credentials in", *CredentialsFile)
 		log.Println("Please enter credentials, I will remember them")
 		if username, password, err = promptCredentials(); err != nil {
 			log.Fatalln(err)
@@ -96,13 +99,13 @@ func main() {
 	log.Println("Login OK.")
 
 	log.Println("Storing credentials to", CredentialsFile)
-	if err = writeCachedCredentials(CredentialsFile, username, password); err != nil {
+	if err = writeCachedCredentials(*CredentialsFile, username, password); err != nil {
 		log.Fatalln(err)
 	}
 
 	log.Println("Downloading consumption data…")
 	var fp *os.File
-	if fp, err = os.Create(OutputFile); err != nil {
+	if fp, err = os.Create(*OutputFile); err != nil {
 		log.Fatalln(err)
 	}
 	if err := f.ConsumptionReport(fp); err != nil {
