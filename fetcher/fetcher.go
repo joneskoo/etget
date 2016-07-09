@@ -21,7 +21,7 @@ var (
 // Fetcher holds the login state such as cookies
 type Fetcher struct {
 	// unexported fields
-	cl       http.Client
+	cl       *http.Client
 	loggedIn bool
 }
 
@@ -32,18 +32,16 @@ var (
 )
 
 // New initializes a fetcher with a fresh cookie jar
-func New() (f Fetcher, err error) {
-	jar, _ := cookiejar.New(nil)
-	f = Fetcher{
-		cl: http.Client{
-			Jar: jar,
-		},
+func (f *Fetcher) initialize() {
+	if f.cl == nil {
+		jar, _ := cookiejar.New(nil)
+		f.cl = &http.Client{Jar: jar}
 	}
-	return
 }
 
 // Login logs in to www.energiatili.fi
 func (f *Fetcher) Login(user, password string) (err error) {
+	f.initialize()
 	form := url.Values{
 		"username": []string{user},
 		"password": []string{password},
@@ -61,6 +59,7 @@ func (f *Fetcher) Login(user, password string) (err error) {
 
 // ConsumptionReport fetches the actual consumption report data (JSON)
 func (f *Fetcher) ConsumptionReport(w io.Writer) (err error) {
+	f.initialize()
 	if f.loggedIn == false {
 		return ErrorNotLoggedIn
 	}

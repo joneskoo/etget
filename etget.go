@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -72,6 +73,11 @@ func writeCachedCredentials(filename, username, password string) (err error) {
 	return
 }
 
+type ConsumptionFetcher interface {
+	Login(username, password string) error
+	ConsumptionReport(w io.Writer) error
+}
+
 func main() {
 	flag.Parse()
 	username, password, err := readCachedCredentials(*CredentialsFile)
@@ -83,10 +89,7 @@ func main() {
 		}
 	}
 
-	var f fetcher.Fetcher
-	if f, err = fetcher.New(); err != nil {
-		log.Fatalln(err)
-	}
+	var f ConsumptionFetcher = &fetcher.Fetcher{}
 
 	log.Println("Logging in…")
 	if err = f.Login(username, string(password)); err != nil {

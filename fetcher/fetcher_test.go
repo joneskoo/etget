@@ -21,11 +21,8 @@ func TestConsumptionReportBeforeLogin(t *testing.T) {
 	///////////////////////////////////////
 	// Test ConsumptionReport before login
 	///////////////////////////////////////
-	fetcher, err := New()
-	if err != nil {
-		t.Error("Failed to initialize fetcher")
-	}
-	err = fetcher.ConsumptionReport(ioutil.Discard)
+	var fetcher Fetcher
+	err := fetcher.ConsumptionReport(ioutil.Discard)
 	if err != ErrorNotLoggedIn {
 		t.Errorf("Expected ErrorNotLoggedIn, got: error=%v", err)
 	}
@@ -38,7 +35,7 @@ func TestLoginStatus(t *testing.T) {
 	ts.statusCode = 403
 	defer ts.Close()
 
-	fetcher, _ := New()
+	var fetcher Fetcher
 	err := fetcher.Login(testLoginUser, testLoginPassword)
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
@@ -55,7 +52,7 @@ func TestNoResponse(t *testing.T) {
 	})
 	defer ts.Close()
 
-	fetcher, _ := New()
+	var fetcher Fetcher
 	err := fetcher.Login(testLoginUser, testLoginPassword)
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
@@ -69,7 +66,7 @@ func TestLoginForm(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	fetcher, _ := New()
+	var fetcher Fetcher
 	fetcher.Login(testLoginUser, testLoginPassword)
 	if len(ts.requests) != 1 {
 		t.Errorf("Expected requests count=1, got count=%v", len(ts.requests))
@@ -92,7 +89,7 @@ func TestConsumptionReport(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	fetcher, _ := New()
+	var fetcher Fetcher
 	err := fetcher.Login(testLoginUser, testLoginPassword)
 	if err != nil {
 		t.Errorf("Got unexpected error from Login(): %v", err)
