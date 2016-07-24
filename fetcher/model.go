@@ -63,5 +63,5 @@ func (c *ConsumptionReport) update() (err error) {
 			c.Hours.Consumptions[i].Series.Data[j].Kwh = raw[1]
 		}
 	}
-	return nil
+	return
 }

@@ -2,9 +2,16 @@ package fetcher
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"time"
+)
+
+var (
+	// ErrorRepeatedRecord indicates that same time repeated
+	// and it was not a corrected DST change
+	ErrorRepeatedRecord = errors.New("Unexpected repeated time record")
+
+	// ErrorMissingRecord indicates missing records, data may be corrupted
+	ErrorMissingRecord = errors.New("Records missing")
 )
 
 // TimeFixer stores information about the previous timestamp needed
@@ -20,6 +27,8 @@ type TimeFixer struct {
 //   3. Represent time in Unix Epoch style, milliseconds from 1970-01-01 00:00:00 UTC
 // The reversing must keep state since on DST change either one hour is missing or repeated.
 func (t *TimeFixer) ParseBrokenTime(localTs float64) (ts time.Time, err error) {
+	var missingRecords bool
+
 	// Decode "unix" time and ignore time zone
 	realTs := time.Unix(int64(localTs/1000), 0).UTC()
 	year, _, day := realTs.Date()
@@ -40,18 +49,20 @@ func (t *TimeFixer) ParseBrokenTime(localTs float64) (ts time.Time, err error) {
 		// DST backward; following data in standard time
 		// This should not happen because local time can be decoded uniquely
 		// to UTC as local time jumps ahead an extra hour
-		return time.Time{}, errors.New("Unexpected repeated time record")
+		return time.Time{}, ErrorRepeatedRecord
 	case 1 * time.Hour:
 		// Normal case
 	case 2 * time.Hour:
 		// DST forward, following data in summer time
 		realTs = realTs.Add(-1 * time.Hour)
-		fmt.Printf("WARN: Compensating DST forward shift %v\n", realTs)
 	default:
 		if !t.prev.IsZero() {
-			log.Printf("WARN: Records missing, now reading %v (got diff=%v)\n", realTs, diff)
+			missingRecords = true
 		}
 	}
 	t.prev = realTs
+	if missingRecords {
+		return realTs, ErrorMissingRecord
+	}
 	return realTs, nil
 }

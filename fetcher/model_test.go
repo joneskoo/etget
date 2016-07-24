@@ -15,7 +15,7 @@ func mustTime(t time.Time, err error) time.Time {
 func TestModel(t *testing.T) {
 	report, err := FromJSON([]byte(sampleJSONData))
 	if err != nil {
-		t.Errorf("Update(): %v", err)
+		t.Errorf("FromJSON(): %v", err)
 	}
 	cases := []struct {
 		in   int
