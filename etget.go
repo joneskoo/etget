@@ -13,6 +13,8 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+const jsonIndent = "    "
+
 var (
 	// CredentialsFile is the file name where credentials are stored
 	CredentialsFile = flag.String("credfile", "./credentials.json",
@@ -64,7 +66,7 @@ func readCachedCredentials(filename string) (username, password string, err erro
 func writeCachedCredentials(filename, username, password string) (err error) {
 	var b []byte
 	c := credentials{username, password}
-	if b, err = json.Marshal(c); err != nil {
+	if b, err = json.MarshalIndent(c, "", jsonIndent); err != nil {
 		return
 	}
 	if err = ioutil.WriteFile(filename, b, 0600); err != nil {
