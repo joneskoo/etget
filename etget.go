@@ -101,7 +101,7 @@ func main() {
 	}
 	log.Println("Login OK.")
 
-	log.Println("Storing credentials to", CredentialsFile)
+	log.Println("Storing credentials to", *CredentialsFile)
 	if err = writeCachedCredentials(*CredentialsFile, username, password); err != nil {
 		log.Fatalln(err)
 	}
@@ -115,5 +115,5 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	log.Println("OK! Wrote output to", OutputFile)
+	log.Println("OK! Wrote output to", *OutputFile)
 }
