@@ -1,9 +1,6 @@
 package fetcher
 
-import (
-	"errors"
-	"time"
-)
+import "time"
 
 // ConsumptionReport is the structure in 'var model' of Energiatili
 type ConsumptionReport struct {
@@ -51,9 +48,6 @@ func (c *ConsumptionReport) Update() (err error) {
 		count := len(cons.Series.RawData)
 		c.Hours.Consumptions[i].Series.Data = make([]DataPoint, count)
 		for j, raw := range cons.Series.RawData {
-			if len(raw) != 2 {
-				return errors.New("Invalid data") //FIXME
-			}
 			c.Hours.Consumptions[i].Series.Data[j].Time, err = fixer.ParseBrokenTime(raw[0])
 			c.Hours.Consumptions[i].Series.Data[j].Kwh = raw[1]
 		}
