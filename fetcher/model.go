@@ -1,6 +1,9 @@
 package fetcher
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // ConsumptionReport is the structure in 'var model' of Energiatili
 type ConsumptionReport struct {
@@ -40,9 +43,17 @@ type DataPoint struct {
 	Kwh  float64
 }
 
-// Update processes input to a easier-to-parse format.
-// Namely RawData under Consumptions is parsed to Data with UTC timestamps.
-func (c *ConsumptionReport) Update() (err error) {
+// FromJSON parses consumption report JSON
+func FromJSON(jsonData []byte) (c ConsumptionReport, err error) {
+	if err = json.Unmarshal(jsonData, &c); err != nil {
+		return
+	}
+	err = c.update()
+	return
+}
+
+// update parses raw timestamps to native time.Time
+func (c *ConsumptionReport) update() (err error) {
 	fixer := TimeFixer{}
 	for i, cons := range c.Hours.Consumptions {
 		count := len(cons.Series.RawData)

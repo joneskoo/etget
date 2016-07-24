@@ -1,22 +1,38 @@
 package fetcher
 
 import (
-	"encoding/json"
 	"testing"
+	"time"
 )
 
-func TestModel(t *testing.T) {
-	var report ConsumptionReport
-	err := json.Unmarshal([]byte(sampleJSONData), &report)
+func mustTime(t time.Time, err error) time.Time {
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Printf("%#v\n", report)
-	err = report.Update()
+	return t
+}
+
+func TestModel(t *testing.T) {
+	report, err := FromJSON([]byte(sampleJSONData))
 	if err != nil {
 		t.Errorf("Update(): %v", err)
 	}
-	// fmt.Printf("%#v\n", report.Hours.Consumptions[0].Series.Data)
+	cases := []struct {
+		in   int
+		want DataPoint
+	}{
+		{0, DataPoint{Kwh: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
+		{1, DataPoint{Kwh: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
+	}
+	for _, c := range cases {
+		got := report.Hours.Consumptions[0].Series.Data[c.in]
+		if got.Kwh != c.want.Kwh {
+			t.Errorf("Expected Hours.Consumptions[0].Series.Data[%v].Kwh = %#v, got %#v", c.in, c.want.Kwh, got.Kwh)
+		}
+		if !got.Time.Equal(c.want.Time) {
+			t.Errorf("Expected Hours.Consumptions[0].Series.Data[%v].Time = %v, got %v", c.in, c.want.Time, got.Time)
+		}
+	}
 }
 
 var sampleJSONData = `
