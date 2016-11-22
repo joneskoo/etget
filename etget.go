@@ -8,8 +8,6 @@ import (
 	"github.com/joneskoo/etget/energiatili"
 )
 
-const jsonIndent = "    "
-
 func main() {
 	credfile := flag.String("credfile", "./credentials.json", "File username/password are saved in (plaintext)")
 	output := flag.String("output", "./power.json", "File consumption data is written in")

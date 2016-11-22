@@ -44,6 +44,8 @@ func (c *CredentialStore) UsernamePassword() (username, password string, err err
 	return username, password, nil
 }
 
+const jsonIndent = "    "
+
 type credentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
