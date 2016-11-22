@@ -3,6 +3,7 @@ package energiatili
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,8 +11,10 @@ import (
 	"net/url"
 )
 
-// ErrorStatusCode is returned if server returns an unexpected HTTP status code
-var ErrorStatusCode = errors.New("unexpected HTTP status code from server")
+var errorStatusCode = errors.New("unexpected status code from server")
+
+// authCookieKey must be set in login or login is considered failed
+const authCookieKey = ".ASPXAUTH"
 
 // Client retrieves data from Energiatili
 type Client struct {
@@ -33,22 +36,35 @@ type Client struct {
 func (f *Client) ConsumptionReport(w io.Writer) (err error) {
 	if !f.loggedIn {
 		if err := f.login(); err != nil {
-			return err
+			// Login again and try again
+			if err := f.login(); err != nil {
+				return err
+			}
 		}
 	}
-	resp, err := f.cl.Get(f.ConsumptionReportURL)
-	if err != nil {
-		return
-	}
-	if resp.StatusCode != http.StatusOK {
-		return ErrorStatusCode
-	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := f.requestConsumptionReport()
 	if err != nil {
 		return err
 	}
 	_, err = html2json(string(body), w)
 	return err
+}
+
+func (f *Client) requestConsumptionReport() (body []byte, err error) {
+	resp, err := f.cl.Get(f.ConsumptionReportURL)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		io.Copy(ioutil.Discard, resp.Body)
+		return nil, fmt.Errorf("unexpected status code %d from server", resp.StatusCode)
+	}
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
 
 func (f *Client) login() (err error) {
@@ -58,7 +74,7 @@ func (f *Client) login() (err error) {
 	}
 	username, password, err := f.GetUsernamePassword()
 	if err != nil {
-		return
+		return err
 	}
 	form := url.Values{
 		"username": []string{username},
@@ -66,11 +82,23 @@ func (f *Client) login() (err error) {
 	}
 	resp, err := f.cl.PostForm(f.LoginURL, form)
 	if err != nil {
-		return
+		return err
 	}
+	defer resp.Body.Close()
+	io.Copy(ioutil.Discard, resp.Body)
+
+	url, _ := url.Parse(f.LoginURL)
+	for _, cookie := range f.cl.Jar.Cookies(url) {
+		if cookie.Name == authCookieKey {
+			f.loggedIn = true
+		}
+	}
+	if !f.loggedIn {
+		return fmt.Errorf("login did not return authentication cookie %s", authCookieKey)
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		return ErrorStatusCode
+		return errorStatusCode
 	}
-	f.loggedIn = true
-	return
+	return nil
 }

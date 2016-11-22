@@ -16,23 +16,30 @@ type CredentialStore struct {
 
 	// Domain is used in the prompt to user when asking for username
 	Domain string
+
+	// return cached value only once
+	cacheReturned bool
 }
 
 // UsernamePassword returns username and password from cache. If called again,
 // it will assume cache is invalid and prompt for new credentials, storing new
 // value in cache.
-func (c CredentialStore) UsernamePassword() (username, password string, err error) {
-	username, password, err = readCachedCredentials(c.File)
-	if err != nil {
-		// Could not find cached credentials
-		log.Println("Please enter credentials, I will remember them")
-		if username, password, err = promptCredentials(c.Domain); err != nil {
-			return "", "", err
+func (c *CredentialStore) UsernamePassword() (username, password string, err error) {
+	if !c.cacheReturned {
+		c.cacheReturned = true
+		username, password, err = readCachedCredentials(c.File)
+		if err == nil {
+			return username, password, nil
 		}
-		log.Println("Storing credentials to", c.File)
-		if err = writeCachedCredentials(c.File, username, password); err != nil {
-			return "", "", err
-		}
+	}
+
+	log.Println("Please enter credentials, I will remember them")
+	if username, password, err = promptCredentials(c.Domain); err != nil {
+		return "", "", err
+	}
+	log.Println("Storing credentials to", c.File)
+	if err = writeCachedCredentials(c.File, username, password); err != nil {
+		return "", "", err
 	}
 	return username, password, nil
 }
