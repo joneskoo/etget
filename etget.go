@@ -15,15 +15,6 @@ import (
 
 const jsonIndent = "    "
 
-var (
-	// CredentialsFile is the file name where credentials are stored
-	CredentialsFile = flag.String("credfile", "./credentials.json",
-		"File username/password are saved in (plaintext)")
-
-	// OutputFile is the name of the file where we write output
-	OutputFile = flag.String("output", "./power.json", "File consumption data is written in")
-)
-
 type credentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -81,10 +72,13 @@ type ConsumptionFetcher interface {
 }
 
 func main() {
+	credfile := flag.String("credfile", "./credentials.json", "File username/password are saved in (plaintext)")
+	output := flag.String("output", "./power.json", "File consumption data is written in")
 	flag.Parse()
-	username, password, err := readCachedCredentials(*CredentialsFile)
+
+	username, password, err := readCachedCredentials(*credfile)
 	if err != nil {
-		log.Println("Could not find cached credentials in", *CredentialsFile)
+		log.Println("Could not find cached credentials in", *credfile)
 		log.Println("Please enter credentials, I will remember them")
 		if username, password, err = promptCredentials(); err != nil {
 			log.Fatalln(err)
@@ -103,19 +97,19 @@ func main() {
 	}
 	log.Println("Login OK.")
 
-	log.Println("Storing credentials to", *CredentialsFile)
-	if err = writeCachedCredentials(*CredentialsFile, username, password); err != nil {
+	log.Println("Storing credentials to", *credfile)
+	if err = writeCachedCredentials(*credfile, username, password); err != nil {
 		log.Fatalln(err)
 	}
 
 	log.Println("Downloading consumption data…")
 	var fp *os.File
-	if fp, err = os.Create(*OutputFile); err != nil {
+	if fp, err = os.Create(*output); err != nil {
 		log.Fatalln(err)
 	}
 	if err := f.ConsumptionReport(fp); err != nil {
 		log.Fatalln(err)
 	}
 
-	log.Println("OK! Wrote output to", *OutputFile)
+	log.Println("OK! Wrote output to", *output)
 }
