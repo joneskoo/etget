@@ -2,6 +2,7 @@ package energiatili
 
 import (
 	"encoding/json"
+	"io"
 	"time"
 )
 
@@ -44,12 +45,13 @@ type DataPoint struct {
 }
 
 // FromJSON parses consumption report JSON
-func FromJSON(jsonData []byte) (c ConsumptionReport, err error) {
-	if err = json.Unmarshal(jsonData, &c); err != nil {
-		return
+func FromJSON(jsonData io.Reader) (c *ConsumptionReport, err error) {
+	decoder := json.NewDecoder(jsonData)
+	if err := decoder.Decode(&c); err != nil {
+		return nil, err
 	}
 	err = c.update()
-	return
+	return c, err
 }
 
 // update parses raw timestamps to native time.Time

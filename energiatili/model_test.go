@@ -1,6 +1,7 @@
 package energiatili
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -13,7 +14,7 @@ func mustTime(t time.Time, err error) time.Time {
 }
 
 func TestModel(t *testing.T) {
-	report, err := FromJSON([]byte(sampleJSONData))
+	report, err := FromJSON(strings.NewReader(sampleJSONData))
 	if err != nil {
 		t.Errorf("FromJSON(): %v", err)
 	}
