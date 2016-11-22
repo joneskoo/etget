@@ -31,7 +31,6 @@ type ConsumptionReport struct {
 				Name           string
 				Resolution     string
 				RawData        [][2]float64 `json:"Data"`
-				Data           []DataPoint  `json:"-"`
 			}
 		}
 	}
@@ -50,20 +49,31 @@ func FromJSON(jsonData io.Reader) (c *ConsumptionReport, err error) {
 	if err := decoder.Decode(&c); err != nil {
 		return nil, err
 	}
-	err = c.update()
 	return c, err
 }
 
-// update parses raw timestamps to native time.Time
-func (c *ConsumptionReport) update() (err error) {
+// DataPoints returns all the consumption readings in the report.
+// The records are valid even if ErrorMissingRecord is returned to indicate
+// gaps in data.
+func (c *ConsumptionReport) DataPoints() (points []DataPoint, err error) {
 	fixer := TimeFixer{}
-	for i, cons := range c.Hours.Consumptions {
-		count := len(cons.Series.RawData)
-		c.Hours.Consumptions[i].Series.Data = make([]DataPoint, count)
-		for j, raw := range cons.Series.RawData {
-			c.Hours.Consumptions[i].Series.Data[j].Time, err = fixer.ParseBrokenTime(raw[0])
-			c.Hours.Consumptions[i].Series.Data[j].Kwh = raw[1]
+	missingRecords := false
+	for _, cons := range c.Hours.Consumptions {
+		for _, raw := range cons.Series.RawData {
+			ts, err := fixer.ParseBrokenTime(raw[0])
+			if err != nil {
+				if err != ErrorMissingRecord {
+					return nil, err
+				}
+				missingRecords = true
+			}
+
+			kwh := raw[1]
+			points = append(points, DataPoint{Time: ts, Kwh: kwh})
 		}
 	}
-	return
+	if missingRecords {
+		return points, ErrorMissingRecord
+	}
+	return points, nil
 }

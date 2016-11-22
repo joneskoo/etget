@@ -25,13 +25,23 @@ func TestModel(t *testing.T) {
 		{0, DataPoint{Kwh: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
 		{1, DataPoint{Kwh: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
 	}
-	for _, c := range cases {
-		got := report.Hours.Consumptions[0].Series.Data[c.in]
-		if got.Kwh != c.want.Kwh {
-			t.Errorf("Expected Hours.Consumptions[0].Series.Data[%v].Kwh = %#v, got %#v", c.in, c.want.Kwh, got.Kwh)
+
+	equal := func(a, b DataPoint) bool {
+		if a.Kwh != b.Kwh {
+			return false
 		}
-		if !got.Time.Equal(c.want.Time) {
-			t.Errorf("Expected Hours.Consumptions[0].Series.Data[%v].Time = %v, got %v", c.in, c.want.Time, got.Time)
+		if !a.Time.Equal(b.Time) {
+			return false
+		}
+		return true
+	}
+
+	points, err := report.DataPoints()
+	for _, c := range cases {
+		got := points[c.in]
+		want := c.want
+		if !equal(got, want) {
+			t.Errorf("points[%d] = %v, want %v", c.in, got, want)
 		}
 	}
 }

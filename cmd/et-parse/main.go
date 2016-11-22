@@ -2,102 +2,85 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
-	"time"
 
 	"github.com/joneskoo/etget/energiatili"
 	"github.com/lib/pq"
 )
 
 func main() {
-	f, err := os.OpenFile("power.json", os.O_RDONLY, 0)
+	ignoreMissing := flag.Bool("ignore-missing", false, "ignore missing records")
+	input := flag.String("input", "power.json", "input file name")
+	flag.Parse()
+
+	f, err := os.OpenFile(*input, os.O_RDONLY, 0)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("ERROR opening data file: %s", err)
 	}
-	points, err := parseHours(f)
+
+	cr, err := energiatili.FromJSON(f)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("ERROR parsing JSON structure: %s", err)
 	}
+
+	points, err := cr.DataPoints()
+	switch err {
+	case nil: // OK
+	case energiatili.ErrorMissingRecord:
+		if !*ignoreMissing {
+			log.Printf("ERROR parsing data: %s", err)
+			log.Printf("To ignore error, use --ignore-missing")
+			os.Exit(1)
+		}
+	default:
+		log.Fatalf("ERROR parsing data: %s", err)
+	}
+
 	rowsAffected, err := importPoints(points)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("ERROR importing to database: %s", err)
 	}
+
 	fmt.Printf("Loaded %d new rows\n", rowsAffected)
 }
 
-type point struct {
-	Time time.Time
-	Kwh  float64
-}
-
-func parseHours(r io.Reader) (points []point, err error) {
-	cr, err := energiatili.FromJSON(r)
-	if err != nil {
-		return nil, err
-	}
-	if len(cr.Hours.Consumptions) != 2 {
-		return nil, fmt.Errorf("len(Consumptions) = %d, want 2", len(cr.Hours.Consumptions))
-	}
-	meterA := cr.Hours.Consumptions[0].Series.Data
-	meterB := cr.Hours.Consumptions[1].Series.Data
-	points = make([]point, len(meterA)+len(meterB))
-	a := 0
-	b := 0
-	for i := 0; i < len(meterA)+len(meterB); i++ {
-		if b >= len(meterB) || a < len(meterA) && meterA[a].Time.Before(meterB[b].Time) {
-			points[i] = point{
-				Time: meterA[a].Time,
-				Kwh:  meterA[a].Kwh,
-			}
-			a++
-		} else {
-			points[i] = point{
-				Time: meterB[b].Time,
-				Kwh:  meterB[b].Kwh,
-			}
-			b++
-		}
-	}
-	return points, nil
-}
-
-func importPoints(points []point) (rowsAffected int64, err error) {
+func importPoints(points []energiatili.DataPoint) (rowsAffected int64, err error) {
 	targetTable := "energiatili"
 	tmpTable := fmt.Sprintf("_%s_tmp", targetTable)
 	db, err := sql.Open("postgres", "sslmode=disable")
 	if err != nil {
-		return
+		return 0, fmt.Errorf("connect to database: %s", err)
 	}
 	defer db.Close()
 
 	txn, err := db.Begin()
 	if err != nil {
-		return
+		return 0, fmt.Errorf("begin transaction: %s", err)
 	}
 
 	// Create an empty temporary table identical to target
 	_, err = txn.Exec(fmt.Sprintf("CREATE TEMP TABLE %s ON COMMIT DROP AS SELECT * FROM %s WITH NO DATA", pq.QuoteIdentifier(tmpTable), pq.QuoteIdentifier(targetTable)))
 	if err != nil {
-		return
+		return 0, fmt.Errorf("create temporary table: %s", err)
 	}
 
 	// Load data into temporary table
 	stmt, err := txn.Prepare(pq.CopyIn(tmpTable, "ts", "kwh"))
 	if err != nil {
-		return
+		return 0, fmt.Errorf("copy data into temporary table: %s", err)
 	}
 	for _, point := range points {
 		_, err = stmt.Exec(point.Time.UTC(), point.Kwh)
 		if err != nil {
-			return
+			return 0, fmt.Errorf("insert data into temporary table: %s", err)
 		}
 	}
 	_, err = stmt.Exec()
 	if err != nil {
-		return
+		return 0, fmt.Errorf("flush after loading data: %s", err)
 	}
 	err = stmt.Close()
 	if err != nil {
@@ -107,7 +90,7 @@ func importPoints(points []point) (rowsAffected int64, err error) {
 	// Copy data from temporary table into target
 	res, err := txn.Exec(fmt.Sprintf("INSERT INTO %s (ts, kwh) SELECT ts, kwh FROM %s ON CONFLICT DO NOTHING", pq.QuoteIdentifier(targetTable), pq.QuoteIdentifier(tmpTable)))
 	if err != nil {
-		return
+		return 0, fmt.Errorf("load data from temporary table: %s", err)
 	}
 	rowsAffected, err = res.RowsAffected()
 	if err != nil {
@@ -116,7 +99,7 @@ func importPoints(points []point) (rowsAffected int64, err error) {
 
 	err = txn.Commit()
 	if err != nil {
-		return
+		return 0, fmt.Errorf("commit transaction: %s", err)
 	}
 	return
 }

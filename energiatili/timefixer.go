@@ -8,10 +8,10 @@ import (
 var (
 	// ErrorRepeatedRecord indicates that same time repeated
 	// and it was not a corrected DST change
-	ErrorRepeatedRecord = errors.New("Unexpected repeated time record")
+	ErrorRepeatedRecord = errors.New("repeated data record timestamps")
 
 	// ErrorMissingRecord indicates missing records, data may be corrupted
-	ErrorMissingRecord = errors.New("Records missing")
+	ErrorMissingRecord = errors.New("data records are not contiguous")
 )
 
 // TimeFixer stores information about the previous timestamp needed
