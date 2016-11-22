@@ -1,4 +1,4 @@
-package fetcher
+package energiatili
 
 import (
 	"encoding/json"

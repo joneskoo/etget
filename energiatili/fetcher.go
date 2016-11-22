@@ -1,5 +1,5 @@
 // Package fetcher downloads www.energiatili.fi energy consumption JSON data
-package fetcher
+package energiatili
 
 import (
 	"errors"
@@ -11,15 +11,17 @@ import (
 	"strings"
 )
 
-var (
-	// LoginURL is login request URL
-	LoginURL = "https://www.energiatili.fi/Extranet/Extranet/LogIn"
-	// ConsumptionReportURL consumption data HTML download URL
-	ConsumptionReportURL = "https://www.energiatili.fi/Reporting/CustomerConsumption/UserConsumptionReport"
-)
-
 // Fetcher holds the login state such as cookies
 type Fetcher struct {
+	// LoginURL is login request URL
+	LoginURL string
+
+	// ConsumptionReportURL consumption data HTML download URL
+	ConsumptionReportURL string
+
+	// GetUsernamePassword is called to get credentials to log in to service
+	GetUsernamePassword func() (string, string, error)
+
 	// unexported fields
 	cl       *http.Client
 	loggedIn bool
@@ -46,7 +48,7 @@ func (f *Fetcher) Login(user, password string) (err error) {
 		"username": []string{user},
 		"password": []string{password},
 	}
-	resp, err := f.cl.PostForm(LoginURL, form)
+	resp, err := f.cl.PostForm(f.LoginURL, form)
 	if err != nil {
 		return
 	}
@@ -63,7 +65,7 @@ func (f *Fetcher) ConsumptionReport(w io.Writer) (err error) {
 	if f.loggedIn == false {
 		return ErrorNotLoggedIn
 	}
-	resp, err := f.cl.Get(ConsumptionReportURL)
+	resp, err := f.cl.Get(f.ConsumptionReportURL)
 	if err != nil {
 		return
 	}

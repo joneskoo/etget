@@ -1,4 +1,4 @@
-package fetcher
+package energiatili
 
 import (
 	"bytes"
@@ -21,8 +21,8 @@ func TestConsumptionReportBeforeLogin(t *testing.T) {
 	///////////////////////////////////////
 	// Test ConsumptionReport before login
 	///////////////////////////////////////
-	var fetcher Fetcher
-	err := fetcher.ConsumptionReport(ioutil.Discard)
+	f := Fetcher{}
+	err := f.ConsumptionReport(ioutil.Discard)
 	if err != ErrorNotLoggedIn {
 		t.Errorf("Expected ErrorNotLoggedIn, got: error=%v", err)
 	}
@@ -35,7 +35,10 @@ func TestLoginStatus(t *testing.T) {
 	ts.statusCode = 403
 	defer ts.Close()
 
-	var fetcher Fetcher
+	fetcher := Fetcher{
+		LoginURL:             ts.URL,
+		ConsumptionReportURL: ts.URL,
+	}
 	err := fetcher.Login(testLoginUser, testLoginPassword)
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
@@ -47,12 +50,15 @@ func TestLoginStatus(t *testing.T) {
 func TestNoResponse(t *testing.T) {
 	ts := testServer{}
 	ts.Start()
-	ts.ts.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ts.ts.CloseClientConnections()
+	ts.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ts.CloseClientConnections()
 	})
 	defer ts.Close()
 
-	var fetcher Fetcher
+	fetcher := Fetcher{
+		LoginURL:             ts.URL,
+		ConsumptionReportURL: ts.URL,
+	}
 	err := fetcher.Login(testLoginUser, testLoginPassword)
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
@@ -66,7 +72,10 @@ func TestLoginForm(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	var fetcher Fetcher
+	fetcher := Fetcher{
+		LoginURL:             ts.URL,
+		ConsumptionReportURL: ts.URL,
+	}
 	fetcher.Login(testLoginUser, testLoginPassword)
 	if len(ts.requests) != 1 {
 		t.Errorf("Expected requests count=1, got count=%v", len(ts.requests))
@@ -89,7 +98,10 @@ func TestConsumptionReport(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	var fetcher Fetcher
+	fetcher := Fetcher{
+		LoginURL:             ts.URL,
+		ConsumptionReportURL: ts.URL,
+	}
 	err := fetcher.Login(testLoginUser, testLoginPassword)
 	if err != nil {
 		t.Errorf("Got unexpected error from Login(): %v", err)
@@ -122,30 +134,20 @@ More stuff
 }
 
 type testServer struct {
-	ts                *httptest.Server
 	oldLoginURL       string
 	oldConsumptionURL string
 	handler           http.Handler
 	statusCode        int
 	body              string
 	requests          []http.Request
+
+	*httptest.Server
 }
 
 func (t *testServer) Start() {
-	t.ts = httptest.NewServer(t)
+	t.Server = httptest.NewServer(t)
 	t.statusCode = 200
 	t.body = "fetcher_test Unit Test server response body"
-	// Overwrite target URLs, but restore after done
-	t.oldLoginURL = LoginURL
-	t.oldConsumptionURL = ConsumptionReportURL
-	LoginURL = t.ts.URL
-	ConsumptionReportURL = t.ts.URL
-}
-
-func (t *testServer) Close() {
-	LoginURL = t.oldLoginURL
-	ConsumptionReportURL = t.oldConsumptionURL
-	t.ts.Close()
 }
 
 // HTTP 200 ok with simple text body
