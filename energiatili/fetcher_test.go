@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,17 +16,6 @@ const (
 	testLoginPassword = "p4ssw0rdForTest"
 )
 
-func TestConsumptionReportBeforeLogin(t *testing.T) {
-	///////////////////////////////////////
-	// Test ConsumptionReport before login
-	///////////////////////////////////////
-	f := Fetcher{}
-	err := f.ConsumptionReport(ioutil.Discard)
-	if err != ErrorNotLoggedIn {
-		t.Errorf("Expected ErrorNotLoggedIn, got: error=%v", err)
-	}
-}
-
 // TestLoginStatus tests error handling when server returns 403 Forbidden
 func TestLoginStatus(t *testing.T) {
 	ts := testServer{}
@@ -35,11 +23,12 @@ func TestLoginStatus(t *testing.T) {
 	ts.statusCode = 403
 	defer ts.Close()
 
-	fetcher := Fetcher{
+	fetcher := Client{
+		GetUsernamePassword:  mockGetUsernamePassword,
 		LoginURL:             ts.URL,
 		ConsumptionReportURL: ts.URL,
 	}
-	err := fetcher.Login(testLoginUser, testLoginPassword)
+	err := fetcher.login()
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
 	}
@@ -55,11 +44,12 @@ func TestNoResponse(t *testing.T) {
 	})
 	defer ts.Close()
 
-	fetcher := Fetcher{
+	fetcher := Client{
+		GetUsernamePassword:  mockGetUsernamePassword,
 		LoginURL:             ts.URL,
 		ConsumptionReportURL: ts.URL,
 	}
-	err := fetcher.Login(testLoginUser, testLoginPassword)
+	err := fetcher.login()
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
 	}
@@ -72,11 +62,12 @@ func TestLoginForm(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	fetcher := Fetcher{
+	fetcher := Client{
+		GetUsernamePassword:  mockGetUsernamePassword,
 		LoginURL:             ts.URL,
 		ConsumptionReportURL: ts.URL,
 	}
-	fetcher.Login(testLoginUser, testLoginPassword)
+	fetcher.login()
 	if len(ts.requests) != 1 {
 		t.Errorf("Expected requests count=1, got count=%v", len(ts.requests))
 	}
@@ -98,11 +89,12 @@ func TestConsumptionReport(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	fetcher := Fetcher{
+	fetcher := Client{
+		GetUsernamePassword:  mockGetUsernamePassword,
 		LoginURL:             ts.URL,
 		ConsumptionReportURL: ts.URL,
 	}
-	err := fetcher.Login(testLoginUser, testLoginPassword)
+	err := fetcher.login()
 	if err != nil {
 		t.Errorf("Got unexpected error from Login(): %v", err)
 	}
@@ -176,3 +168,7 @@ func (t *testServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // 		t.Errorf("Expected ConsumptionReport() to succeed, but got error: %v", err)
 // 	}
 // }
+
+func mockGetUsernamePassword() (username, password string, err error) {
+	return testLoginUser, testLoginPassword, nil
+}

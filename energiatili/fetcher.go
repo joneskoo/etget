@@ -1,4 +1,4 @@
-// Package fetcher downloads www.energiatili.fi energy consumption JSON data
+// Package energiatili downloads www.energiatili.fi energy consumption JSON data
 package energiatili
 
 import (
@@ -11,9 +11,12 @@ import (
 	"strings"
 )
 
-// Fetcher holds the login state such as cookies
-type Fetcher struct {
-	// LoginURL is login request URL
+// ErrorStatusCode is returned if server returns an unexpected HTTP status code
+var ErrorStatusCode = errors.New("unexpected HTTP status code from server")
+
+// Client retrieves data from Energiatili
+type Client struct {
+	// LoginURL is address for the login request to initialize session
 	LoginURL string
 
 	// ConsumptionReportURL consumption data HTML download URL
@@ -27,43 +30,13 @@ type Fetcher struct {
 	loggedIn bool
 }
 
-// ErrorNotLoggedIn is raised if trying to call url fetch before Login()
-var (
-	ErrorNotLoggedIn = errors.New("NeedLoginFirst")
-	ErrorStatusCode  = errors.New("UnexpectedHTTPStatusCodeFromServer")
-)
-
-// New initializes a fetcher with a fresh cookie jar
-func (f *Fetcher) initialize() {
-	if f.cl == nil {
-		jar, _ := cookiejar.New(nil)
-		f.cl = &http.Client{Jar: jar}
-	}
-}
-
-// Login logs in to www.energiatili.fi
-func (f *Fetcher) Login(user, password string) (err error) {
-	f.initialize()
-	form := url.Values{
-		"username": []string{user},
-		"password": []string{password},
-	}
-	resp, err := f.cl.PostForm(f.LoginURL, form)
-	if err != nil {
-		return
-	}
-	if resp.StatusCode != http.StatusOK {
-		return ErrorStatusCode
-	}
-	f.loggedIn = true
-	return
-}
-
 // ConsumptionReport fetches the actual consumption report data (JSON)
-func (f *Fetcher) ConsumptionReport(w io.Writer) (err error) {
+func (f *Client) ConsumptionReport(w io.Writer) (err error) {
 	f.initialize()
-	if f.loggedIn == false {
-		return ErrorNotLoggedIn
+	if !f.loggedIn {
+		if err := f.login(); err != nil {
+			return err
+		}
 	}
 	resp, err := f.cl.Get(f.ConsumptionReportURL)
 	if err != nil {
@@ -83,4 +56,33 @@ func (f *Fetcher) ConsumptionReport(w io.Writer) (err error) {
 	r := strings.NewReader(data)
 	_, err = io.Copy(w, r)
 	return err
+}
+
+// New initializes a fetcher with a fresh cookie jar
+func (f *Client) initialize() {
+	if f.cl == nil {
+		jar, _ := cookiejar.New(nil)
+		f.cl = &http.Client{Jar: jar}
+	}
+}
+
+func (f *Client) login() (err error) {
+	f.initialize()
+	username, password, err := f.GetUsernamePassword()
+	if err != nil {
+		return
+	}
+	form := url.Values{
+		"username": []string{username},
+		"password": []string{password},
+	}
+	resp, err := f.cl.PostForm(f.LoginURL, form)
+	if err != nil {
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		return ErrorStatusCode
+	}
+	f.loggedIn = true
+	return
 }

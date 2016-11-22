@@ -4,17 +4,46 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 
 	"golang.org/x/crypto/ssh/terminal"
 )
+
+// CredentialStore stores secrets insecurely in a file
+type CredentialStore struct {
+	// File is the name of the file where credentials are stored
+	File string
+
+	// Domain is used in the prompt to user when asking for username
+	Domain string
+}
+
+// UsernamePassword returns username and password from cache. If called again,
+// it will assume cache is invalid and prompt for new credentials, storing new
+// value in cache.
+func (c CredentialStore) UsernamePassword() (username, password string, err error) {
+	username, password, err = readCachedCredentials(c.File)
+	if err != nil {
+		// Could not find cached credentials
+		log.Println("Please enter credentials, I will remember them")
+		if username, password, err = promptCredentials(c.Domain); err != nil {
+			return "", "", err
+		}
+		log.Println("Storing credentials to", c.File)
+		if err = writeCachedCredentials(c.File, username, password); err != nil {
+			return "", "", err
+		}
+	}
+	return username, password, nil
+}
 
 type credentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-func promptCredentials() (username, password string, err error) {
-	fmt.Print("www.energiatili.fi username: ")
+func promptCredentials(domain string) (username, password string, err error) {
+	fmt.Printf("%s username: ", domain)
 	if _, err = fmt.Scanln(&username); err != nil {
 		return
 	}
