@@ -56,6 +56,10 @@ func importPoints(points []energiatili.DataPoint) (rowsAffected int64, err error
 	}
 	defer db.Close()
 
+	if err = db.Ping(); err != nil {
+		return 0, fmt.Errorf("test database connection: %s", err)
+	}
+
 	txn, err := db.Begin()
 	if err != nil {
 		return 0, fmt.Errorf("begin transaction: %s", err)
