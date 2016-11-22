@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"strings"
 )
 
 // ErrorStatusCode is returned if server returns an unexpected HTTP status code
@@ -32,7 +31,6 @@ type Client struct {
 
 // ConsumptionReport fetches the actual consumption report data (JSON)
 func (f *Client) ConsumptionReport(w io.Writer) (err error) {
-	f.initialize()
 	if !f.loggedIn {
 		if err := f.login(); err != nil {
 			return err
@@ -49,25 +47,15 @@ func (f *Client) ConsumptionReport(w io.Writer) (err error) {
 	if err != nil {
 		return err
 	}
-	data, err := html2json(body)
-	if err != nil {
-		return err
-	}
-	r := strings.NewReader(data)
-	_, err = io.Copy(w, r)
+	_, err = html2json(string(body), w)
 	return err
 }
 
-// New initializes a fetcher with a fresh cookie jar
-func (f *Client) initialize() {
+func (f *Client) login() (err error) {
 	if f.cl == nil {
 		jar, _ := cookiejar.New(nil)
 		f.cl = &http.Client{Jar: jar}
 	}
-}
-
-func (f *Client) login() (err error) {
-	f.initialize()
 	username, password, err := f.GetUsernamePassword()
 	if err != nil {
 		return

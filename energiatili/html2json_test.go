@@ -1,6 +1,7 @@
 package energiatili
 
 import (
+	"bytes"
 	"testing"
 )
 
@@ -20,9 +21,16 @@ func TestDateConverterPositive(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		out := dateConverter(c.in)
-		if out != c.want {
-			t.Errorf("dateConverter(%q); expected %q, got %q", c.in, c.want, out)
+		buf := new(bytes.Buffer)
+		n, err := dateConverter(c.in, buf)
+		if n != buf.Len() {
+			t.Errorf("n, err := dateConverter(%q, w); expected n (%d) to equal bytes written (%d)", c.in, n, buf.Len())
+		}
+		if err != nil {
+			t.Errorf("n, err := dateConverter(%q, w); got error: %s", c.in, err)
+		}
+		if buf.String() != c.want {
+			t.Errorf("dateConverter(%q, w); expected %q, got %q", c.in, c.want, buf.String())
 		}
 	}
 }
