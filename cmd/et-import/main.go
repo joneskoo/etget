@@ -1,3 +1,5 @@
+// et-import imports data from www.energiatili.fi internal JSON
+// format to PostgreSQL.
 package main
 
 import (
@@ -50,6 +52,7 @@ func main() {
 func importPoints(points []energiatili.DataPoint) (rowsAffected int64, err error) {
 	targetTable := "energiatili"
 	tmpTable := fmt.Sprintf("_%s_tmp", targetTable)
+
 	db, err := sql.Open("postgres", "sslmode=disable")
 	if err != nil {
 		return 0, fmt.Errorf("connect to database: %s", err)
@@ -58,6 +61,12 @@ func importPoints(points []energiatili.DataPoint) (rowsAffected int64, err error
 
 	if err = db.Ping(); err != nil {
 		return 0, fmt.Errorf("test database connection: %s", err)
+	}
+
+	// Ensure table exists
+	res, err := db.Exec(createTable)
+	if err != nil {
+		return 0, fmt.Errorf("ensure table exists: %s", err)
 	}
 
 	txn, err := db.Begin()
@@ -92,7 +101,7 @@ func importPoints(points []energiatili.DataPoint) (rowsAffected int64, err error
 	}
 
 	// Copy data from temporary table into target
-	res, err := txn.Exec(fmt.Sprintf("INSERT INTO %s (ts, kwh) SELECT ts, kwh FROM %s ON CONFLICT DO NOTHING", pq.QuoteIdentifier(targetTable), pq.QuoteIdentifier(tmpTable)))
+	res, err = txn.Exec(fmt.Sprintf("INSERT INTO %s (ts, kwh) SELECT ts, kwh FROM %s ON CONFLICT DO NOTHING", pq.QuoteIdentifier(targetTable), pq.QuoteIdentifier(tmpTable)))
 	if err != nil {
 		return 0, fmt.Errorf("load data from temporary table: %s", err)
 	}
