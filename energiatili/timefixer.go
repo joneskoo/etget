@@ -27,8 +27,6 @@ type TimeFixer struct {
 //   3. Represent time in Unix Epoch style, milliseconds from 1970-01-01 00:00:00 UTC
 // The reversing must keep state since on DST change either one hour is missing or repeated.
 func (t *TimeFixer) ParseBrokenTime(localTs float64) (ts time.Time, err error) {
-	var missingRecords bool
-
 	// Decode "unix" time and ignore time zone
 	realTs := time.Unix(int64(localTs/1000), 0).UTC()
 	year, _, day := realTs.Date()
@@ -41,6 +39,20 @@ func (t *TimeFixer) ParseBrokenTime(localTs float64) (ts time.Time, err error) {
 
 	// Interpret clock time as local time
 	realTs = time.Date(year, month, day, hour, min, sec, 0, helsinki)
+	return t.fix(realTs)
+}
+
+// ParseInLocation parses timestamps statefully and fixes missing timezone DST
+func (t *TimeFixer) ParseInLocation(layout, value string, loc *time.Location) (ts time.Time, err error) {
+	realTs, err := time.ParseInLocation(layout, value, loc)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return t.fix(realTs)
+}
+
+func (t *TimeFixer) fix(realTs time.Time) (ts time.Time, err error) {
+	var missingRecords bool
 
 	// Compare to previous record; adjust for DST gap
 	diff := realTs.Sub(t.prev)

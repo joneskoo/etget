@@ -13,19 +13,12 @@ import (
 
 	"time"
 
+	"github.com/joneskoo/etget/energiatili"
 	"github.com/joneskoo/etget/htmltable"
 	"github.com/lib/pq"
 )
 
-// location defines the time zone of the data being imported
-var location *time.Location
-
-func init() {
-	var err error
-	if location, err = time.LoadLocation("Europe/Paris"); err != nil {
-		panic(fmt.Sprintf("ERROR loading timezone: %s", err))
-	}
-}
+const timeLayout = "02-01-2006 15"
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "Usage: %s FILENAME\n\n", os.Args[0])
@@ -84,6 +77,14 @@ type record struct {
 }
 
 func parseTable(table htmltable.Table) (records []record, err error) {
+	var loc *time.Location
+	loc, err = time.LoadLocation("Europe/Paris")
+	if err != nil {
+		return nil, err
+
+	}
+	fixer := energiatili.TimeFixer{}
+
 	header := table.Headers[2]
 
 	commaToPeriod := strings.NewReplacer(",", ".")
@@ -93,9 +94,12 @@ func parseTable(table htmltable.Table) (records []record, err error) {
 		for i, k := range header {
 			prices[k] = commaToPeriod.Replace(t[i])
 		}
+		if prices["SYS"] == "" {
+			continue
+		}
 
-		// Date is t[0], and hour is t[1], in CET timezone (Europe/Paris)
-		ts, err := time.ParseInLocation("02-01-2006 15", fmt.Sprintf("%s %s", t[0], t[1][0:2]), location)
+		// Date is t[0], and hour is first two bytes of t[1]
+		ts, err := fixer.ParseInLocation(timeLayout, fmt.Sprintf("%s %s", t[0], t[1][0:2]), loc)
 		if err != nil {
 			return nil, err
 		}
