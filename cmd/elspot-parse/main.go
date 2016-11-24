@@ -34,10 +34,10 @@ func usage() {
 	os.Exit(1)
 }
 
-var traceTimings *bool
+var traceTimings bool
 
 func main() {
-	flag.BoolVar(traceTimings, "trace", false, "trace execution time")
+	flag.BoolVar(&traceTimings, "trace", false, "trace execution time")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -45,25 +45,36 @@ func main() {
 		flag.Usage()
 	}
 
+	progress := timer{time.Now()}
+
 	f, err := os.OpenFile(flag.Arg(0), os.O_RDONLY, 0)
 	if err != nil {
 		log.Fatalf("ERROR opening data file: %s", err)
 	}
+
+	progress.Track("open file")
 
 	tables, err := htmltable.Parse(f)
 	if err != nil {
 		log.Fatalf("ERROR parsing HTML table: %s", err)
 	}
 
+	progress.Track("parse html")
+
 	records, err := parseTable(tables[0])
 	if err != nil {
 		log.Fatalf("ERROR parsing elspot table: %s", err)
 	}
 
+	progress.Track("parse table")
+
 	rowsAffected, err := loadToPostgres(records)
 	if err != nil {
 		log.Fatalf("ERROR importing to PostgreSQL: %s", err)
 	}
+
+	progress.Track("load to postgres")
+
 	fmt.Printf("OK! %d rows affected\n", rowsAffected)
 }
 
@@ -100,6 +111,9 @@ func parseTable(table htmltable.Table) (records []record, err error) {
 type timer struct{ time.Time }
 
 func (t *timer) Track(msg string) {
+	if !traceTimings {
+		return
+	}
 	if t.IsZero() {
 		t.Time = time.Now()
 	}
