@@ -16,6 +16,7 @@ import (
 func main() {
 	ignoreMissing := flag.Bool("ignore-missing", false, "ignore missing records")
 	input := flag.String("input", "power.json", "input file name")
+	connstring := flag.String("connstring", "sslmode=disable", "https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING")
 	flag.Parse()
 
 	f, err := os.OpenFile(*input, os.O_RDONLY, 0)
@@ -41,7 +42,7 @@ func main() {
 		log.Fatalf("ERROR parsing data: %s", err)
 	}
 
-	rowsAffected, err := importPoints(points)
+	rowsAffected, err := importPoints(*connstring, points)
 	if err != nil {
 		log.Fatalf("ERROR importing to database: %s", err)
 	}
@@ -49,11 +50,11 @@ func main() {
 	fmt.Printf("Loaded %d new rows\n", rowsAffected)
 }
 
-func importPoints(points []energiatili.DataPoint) (rowsAffected int64, err error) {
+func importPoints(connstring string, points []energiatili.DataPoint) (rowsAffected int64, err error) {
 	targetTable := "energiatili"
 	tmpTable := fmt.Sprintf("_%s_tmp", targetTable)
 
-	db, err := sql.Open("postgres", "sslmode=disable")
+	db, err := sql.Open("postgres", connstring)
 	if err != nil {
 		return 0, fmt.Errorf("connect to database: %s", err)
 	}

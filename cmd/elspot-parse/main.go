@@ -30,6 +30,7 @@ func usage() {
 var traceTimings bool
 
 func main() {
+	connstring := flag.String("connstring", "sslmode=disable", "https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING")
 	flag.BoolVar(&traceTimings, "trace", false, "trace execution time")
 	flag.Usage = usage
 	flag.Parse()
@@ -61,7 +62,7 @@ func main() {
 
 	progress.Track("parse table")
 
-	rowsAffected, err := loadToPostgres(records)
+	rowsAffected, err := loadToPostgres(*connstring, records)
 	if err != nil {
 		log.Fatalf("ERROR importing to PostgreSQL: %s", err)
 	}
@@ -125,10 +126,10 @@ func (t *timer) Track(msg string) {
 	t.Time = time.Now()
 }
 
-func loadToPostgres(records []record) (rowsAffected int64, err error) {
+func loadToPostgres(connstring string, records []record) (rowsAffected int64, err error) {
 	progress := timer{time.Now()}
 
-	db, err := sql.Open("postgres", "sslmode=disable")
+	db, err := sql.Open("postgres", connstring)
 	if err != nil {
 		return 0, fmt.Errorf("connect to database: %s", err)
 	}
