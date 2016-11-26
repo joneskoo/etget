@@ -9,12 +9,13 @@ import (
 	"log"
 	"os"
 
+	"encoding/json"
+
 	"github.com/joneskoo/etget/energiatili"
 	"github.com/lib/pq"
 )
 
 func main() {
-	ignoreMissing := flag.Bool("ignore-missing", false, "ignore missing records")
 	input := flag.String("input", "power.json", "input file name")
 	connstring := flag.String("connstring", "sslmode=disable", "https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING")
 	flag.Parse()
@@ -24,21 +25,15 @@ func main() {
 		log.Fatalf("ERROR opening data file: %s", err)
 	}
 
-	cr, err := energiatili.FromJSON(f)
+	var consumptionreport energiatili.ConsumptionReport
+	decoder := json.NewDecoder(f)
+	err = decoder.Decode(&consumptionreport)
 	if err != nil {
 		log.Fatalf("ERROR parsing JSON structure: %s", err)
 	}
 
-	points, err := cr.Records()
-	switch err {
-	case nil: // OK
-	case energiatili.ErrorMissingRecord:
-		if !*ignoreMissing {
-			log.Printf("ERROR parsing data: %s", err)
-			log.Printf("To ignore error, use --ignore-missing")
-			os.Exit(1)
-		}
-	default:
+	points, err := consumptionreport.Records()
+	if err != nil {
 		log.Fatalf("ERROR parsing data: %s", err)
 	}
 
@@ -87,7 +82,7 @@ func importPoints(connstring string, points []energiatili.Record) (rowsAffected 
 		return 0, fmt.Errorf("copy data into temporary table: %s", err)
 	}
 	for _, point := range points {
-		_, err = stmt.Exec(point.Time.UTC(), point.Value)
+		_, err = stmt.Exec(point.Timestamp.UTC(), point.Value)
 		if err != nil {
 			return 0, fmt.Errorf("insert data into temporary table: %s", err)
 		}

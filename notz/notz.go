@@ -23,27 +23,33 @@ package notz
 
 import "time"
 
-// TimeSetter interface must be implemented by values used with FixDST.
-type TimeSetter interface {
-	// Time retrieves the timestamp value to be fixed
-	Time() time.Time
-
-	// SetTime sets the timestamp value to be fixed
-	SetTime(time.Time)
-}
-
 // FixDST fixes DST ambiguoity in a slice of values.
 // All values must be hours with no minutes, seconds or nanoseconds part
 // in sequential order.
-func FixDST(times []TimeSetter) {
-	var prev TimeSetter
-	for _, t := range times {
-		// First record can't be fixed, so skip processing.
-		if prev != nil {
-			if t.Time().Equal(prev.Time()) {
-				prev.SetTime(prev.Time().Add(-time.Hour))
-			}
+func FixDST(data Interface) {
+	for i := 1; i < data.Len(); i++ {
+		prev := data.Time(i - 1)
+		if data.Time(i).Equal(prev) {
+			data.SetTime(i-1, prev.Add(-time.Hour))
 		}
-		prev = t
 	}
 }
+
+// Interface must be implemented by values used with FixDST.
+type Interface interface {
+	// Len is the number of elements in the collection.
+	Len() int
+
+	// Time retrieves the timestamp value to be fixed.
+	Time(i int) time.Time
+
+	// SetTime sets the timestamp value to be fixed.
+	SetTime(i int, t time.Time)
+}
+
+// Times is a slice of time.Time values and implements notz.Interface.
+type Times []time.Time
+
+func (t Times) Len() int                     { return len(t) }
+func (t Times) Time(i int) time.Time         { return t[i] }
+func (t Times) SetTime(i int, new time.Time) { t[i] = new }

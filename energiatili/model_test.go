@@ -1,7 +1,7 @@
 package energiatili_test
 
 import (
-	"strings"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -16,23 +16,25 @@ func mustTime(t time.Time, err error) time.Time {
 }
 
 func TestModel(t *testing.T) {
-	report, err := energiatili.FromJSON(strings.NewReader(sampleJSONData))
+	var report energiatili.ConsumptionReport
+	err := json.Unmarshal([]byte(sampleJSONData), &report)
 	if err != nil {
-		t.Errorf("FromJSON(): %v", err)
+		t.Fatalf("ERROR parsing JSON structure: %s", err)
 	}
+
 	cases := []struct {
 		in   int
 		want energiatili.Record
 	}{
-		{0, energiatili.Record{Value: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
-		{1, energiatili.Record{Value: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
+		{0, energiatili.Record{Value: 0, Timestamp: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
+		{1, energiatili.Record{Value: 2.646, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
 	}
 
 	equal := func(a, b energiatili.Record) bool {
 		if a.Value != b.Value {
 			return false
 		}
-		if !a.Time.Equal(b.Time) {
+		if !a.Timestamp.Equal(b.Timestamp) {
 			return false
 		}
 		return true

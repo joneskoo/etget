@@ -49,20 +49,20 @@ func TestTimeFixer(t *testing.T) {
 
 	for tc, testcase := range cases {
 		// Create a time-zone unaware version (DST confusion)
-		var times []notz.TimeSetter
+		var tcTimes []time.Time
 		for _, tt := range testcase {
 			tHelsinki := tt.In(helsinki)
 			year, _, day := tHelsinki.Date()
 			month := tHelsinki.Month()
 			hour, min, sec := tHelsinki.Clock()
 			nano := tHelsinki.Nanosecond()
-			times = append(times, &mockTimeSetter{time.Date(year, month, day, hour, min, sec, nano, helsinki)})
+			tcTimes = append(tcTimes, time.Date(year, month, day, hour, min, sec, nano, helsinki))
 		}
-		notz.FixDST(times)
+		notz.FixDST(notz.Times(tcTimes))
 
 		for i, tt := range testcase {
-			if !tt.Equal(times[i].Time()) {
-				t.Errorf("testcase #%d[%d]: want %s, got %s", tc, i, tt.UTC(), times[i].Time().UTC())
+			if !tt.Equal(tcTimes[i]) {
+				t.Errorf("testcase #%d[%d]: want %s, got %s", tc, i, tt.UTC(), tcTimes[i].UTC())
 			}
 		}
 
@@ -75,15 +75,15 @@ func ExampleFixDST() {
 		panic(err)
 	}
 
-	times := []notz.TimeSetter{
-		&mockTimeSetter{time.Date(2015, 10, 25, 2, 0, 0, 0, helsinki)},
-		&mockTimeSetter{time.Date(2015, 10, 25, 3, 0, 0, 0, helsinki)},
-		&mockTimeSetter{time.Date(2015, 10, 25, 3, 0, 0, 0, helsinki)},
-		&mockTimeSetter{time.Date(2015, 10, 25, 4, 0, 0, 0, helsinki)},
+	data := []time.Time{
+		time.Date(2015, 10, 25, 2, 0, 0, 0, helsinki),
+		time.Date(2015, 10, 25, 3, 0, 0, 0, helsinki),
+		time.Date(2015, 10, 25, 3, 0, 0, 0, helsinki),
+		time.Date(2015, 10, 25, 4, 0, 0, 0, helsinki),
 	}
-	notz.FixDST(times)
-	for _, t := range times {
-		fmt.Printf("%s\n", t.Time())
+	notz.FixDST(notz.Times(data))
+	for _, t := range data {
+		fmt.Printf("%s\n", t)
 	}
 	// Output:
 	// 2015-10-25 02:00:00 +0300 EEST
@@ -91,13 +91,6 @@ func ExampleFixDST() {
 	// 2015-10-25 03:00:00 +0200 EET
 	// 2015-10-25 04:00:00 +0200 EET
 }
-
-type mockTimeSetter struct {
-	t time.Time
-}
-
-func (m mockTimeSetter) Time() time.Time      { return m.t }
-func (m *mockTimeSetter) SetTime(t time.Time) { m.t = t }
 
 func must(t time.Time, err error) time.Time {
 	if err != nil {

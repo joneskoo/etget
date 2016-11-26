@@ -8,8 +8,8 @@ import (
 
 // Record is a timestamped value (consumption or temperature)
 type Record struct {
-	Time  time.Time
-	Value float64
+	Timestamp time.Time
+	Value     float64
 }
 
 var utc, helsinki *time.Location
@@ -27,20 +27,34 @@ func init() {
 }
 
 // MarshalJSON returns d as the JSON encoding of d.
-func (d Record) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("[%d,%f]", formatEnergiatiliTime(d.Time), d.Value)), nil
+func (r Record) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("[%d,%f]", formatEnergiatiliTime(r.Timestamp), r.Value)), nil
 }
 
 // UnmarshalJSON sets d to a copy of data.
-func (d *Record) UnmarshalJSON(data []byte) error {
+func (r *Record) UnmarshalJSON(data []byte) error {
 	var decoded [2]float64
 	if err := json.Unmarshal(data, &decoded); err != nil {
 		return err
 	}
-	d.Time = parseEnergiatiliTime(decoded[0])
-	d.Value = decoded[1]
+	r.Timestamp = parseEnergiatiliTime(decoded[0])
+	r.Value = decoded[1]
 	return nil
 }
+
+// ByTime is used to sort records by their Time field.
+type ByTime []Record
+
+func (b ByTime) Len() int           { return len(b) }
+func (b ByTime) Less(i, j int) bool { return b[i].Timestamp.Before(b[j].Timestamp) }
+func (b ByTime) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+
+// Records implements notz.Interface for notz.FixDST.
+type Records []Record
+
+func (r Records) Len() int                     { return len(r) }
+func (r Records) Time(i int) time.Time         { return r[i].Timestamp }
+func (r Records) SetTime(i int, new time.Time) { r[i].Timestamp = new }
 
 // parseEnergiatiliTime decodes "unixMillis" ignoring time zone and cast to Helsinki time
 func parseEnergiatiliTime(t float64) time.Time {

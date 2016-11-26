@@ -13,8 +13,8 @@ import (
 
 	"time"
 
-	"github.com/joneskoo/etget/energiatili"
 	"github.com/joneskoo/etget/htmltable"
+	"github.com/joneskoo/etget/notz"
 	"github.com/lib/pq"
 )
 
@@ -73,19 +73,24 @@ func main() {
 }
 
 type record struct {
-	Time   time.Time
-	Prices map[string]string
+	Timestamp time.Time
+	Prices    map[string]string
 }
 
-func parseTable(table htmltable.Table) (records []record, err error) {
+// records implements notz.Interface for notz.FixDST.
+type records []record
+
+func (r records) Len() int                     { return len(r) }
+func (r records) Time(i int) time.Time         { return r[i].Timestamp }
+func (r records) SetTime(i int, new time.Time) { r[i].Timestamp = new }
+
+func parseTable(table htmltable.Table) (data []record, err error) {
 	var loc *time.Location
 	loc, err = time.LoadLocation("Europe/Paris")
 	if err != nil {
 		return nil, err
 
 	}
-	fixer := energiatili.TimeFixer{}
-
 	header := table.Headers[2]
 
 	commaToPeriod := strings.NewReplacer(",", ".")
@@ -100,16 +105,17 @@ func parseTable(table htmltable.Table) (records []record, err error) {
 		}
 
 		// Date is t[0], and hour is first two bytes of t[1]
-		ts, err := fixer.ParseInLocation(timeLayout, fmt.Sprintf("%s %s", t[0], t[1][0:2]), loc)
+		ts, err := time.ParseInLocation(timeLayout, fmt.Sprintf("%s %s", t[0], t[1][0:2]), loc)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parsing timestamp: %s", err)
 		}
 
-		records = append(records, record{
-			Time:   ts,
-			Prices: prices,
+		data = append(data, record{
+			Timestamp: ts,
+			Prices:    prices,
 		})
 	}
+	notz.FixDST(records(data))
 	return
 }
 
@@ -173,7 +179,7 @@ func loadToPostgres(connstring string, records []record) (rowsAffected int64, er
 		if r.Prices["FI"] == "" {
 			continue
 		}
-		_, err = stmt.Exec(r.Time, r.Prices["FI"])
+		_, err = stmt.Exec(r.Timestamp, r.Prices["FI"])
 		if err != nil {
 			return 0, fmt.Errorf("insert data into temporary table: %s", err)
 		}
