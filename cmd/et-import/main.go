@@ -87,7 +87,7 @@ func importPoints(connstring string, points []energiatili.Record) (rowsAffected 
 		return 0, fmt.Errorf("copy data into temporary table: %s", err)
 	}
 	for _, point := range points {
-		_, err = stmt.Exec(point.Time.UTC(), point.Kwh)
+		_, err = stmt.Exec(point.Time.UTC(), point.Value)
 		if err != nil {
 			return 0, fmt.Errorf("insert data into temporary table: %s", err)
 		}

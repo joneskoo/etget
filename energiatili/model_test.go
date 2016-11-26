@@ -10,7 +10,7 @@ import (
 )
 
 func TestRecordBidirectional(t *testing.T) {
-	dp := energiatili.Record{Time: time.Date(2016, 11, 26, 6, 35, 0, 0, time.Local), Kwh: 1.5}
+	dp := energiatili.Record{Time: time.Date(2016, 11, 26, 6, 35, 0, 0, time.Local), Value: 1.5}
 	b, err := json.Marshal(dp)
 	if err != nil {
 		t.Fatalf("JSON marshal of Record: %s", err)
@@ -21,7 +21,7 @@ func TestRecordBidirectional(t *testing.T) {
 	if err != nil {
 		t.Fatalf("JSON unmarshal of marshal result: %s", err)
 	}
-	if dp2.Kwh != dp.Kwh || !dp2.Time.Equal(dp.Time) {
+	if dp2.Value != dp.Value || !dp2.Time.Equal(dp.Time) {
 		t.Fatalf("want unmarshal(marshal(...)) to restore time %s, got %s", dp.Time.UTC(), dp2.Time.UTC())
 	}
 }
@@ -42,12 +42,12 @@ func TestModel(t *testing.T) {
 		in   int
 		want energiatili.Record
 	}{
-		{0, energiatili.Record{Kwh: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
-		{1, energiatili.Record{Kwh: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
+		{0, energiatili.Record{Value: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
+		{1, energiatili.Record{Value: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
 	}
 
 	equal := func(a, b energiatili.Record) bool {
-		if a.Kwh != b.Kwh {
+		if a.Value != b.Value {
 			return false
 		}
 		if !a.Time.Equal(b.Time) {

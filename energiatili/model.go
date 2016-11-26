@@ -37,16 +37,15 @@ type ConsumptionReport struct {
 	}
 }
 
-// Record is the parsed format of a single record, result
-// of running Update()
+// Record is a timestamped value (consumption or temperature)
 type Record struct {
-	Time time.Time
-	Kwh  float64
+	Time  time.Time
+	Value float64
 }
 
 // MarshalJSON returns d as the JSON encoding of d.
 func (d Record) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("[%d,%f]", formatEnergiatiliTime(d.Time), d.Kwh)), nil
+	return []byte(fmt.Sprintf("[%d,%f]", formatEnergiatiliTime(d.Time), d.Value)), nil
 }
 
 // UnmarshalJSON sets d to a copy of data.
@@ -56,7 +55,7 @@ func (d *Record) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	d.Time = parseEnergiatiliTime(decoded[0])
-	d.Kwh = decoded[1]
+	d.Value = decoded[1]
 	return nil
 }
 
@@ -118,8 +117,8 @@ func (c *ConsumptionReport) Records() (points []Record, err error) {
 			// 	missingRecords = true
 			// }
 
-			// kwh := raw[1]
-			// points = append(points, Record{Time: ts, Kwh: kwh})
+			// value := raw[1]
+			// points = append(points, Record{Time: ts, Value: value})
 		}
 	}
 	if missingRecords {
