@@ -29,7 +29,7 @@ func main() {
 		log.Fatalf("ERROR parsing JSON structure: %s", err)
 	}
 
-	points, err := cr.DataPoints()
+	points, err := cr.Records()
 	switch err {
 	case nil: // OK
 	case energiatili.ErrorMissingRecord:
@@ -50,7 +50,7 @@ func main() {
 	fmt.Printf("Loaded %d new rows\n", rowsAffected)
 }
 
-func importPoints(connstring string, points []energiatili.DataPoint) (rowsAffected int64, err error) {
+func importPoints(connstring string, points []energiatili.Record) (rowsAffected int64, err error) {
 	targetTable := "energiatili"
 	tmpTable := fmt.Sprintf("_%s_tmp", targetTable)
 

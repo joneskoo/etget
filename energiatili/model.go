@@ -31,26 +31,26 @@ type ConsumptionReport struct {
 				ReadingCounter int
 				Name           string
 				Resolution     string
-				Data           []DataPoint
+				Data           []Record
 			}
 		}
 	}
 }
 
-// DataPoint is the parsed format of a single record, result
+// Record is the parsed format of a single record, result
 // of running Update()
-type DataPoint struct {
+type Record struct {
 	Time time.Time
 	Kwh  float64
 }
 
 // MarshalJSON returns d as the JSON encoding of d.
-func (d DataPoint) MarshalJSON() ([]byte, error) {
+func (d Record) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf("[%d,%f]", formatEnergiatiliTime(d.Time), d.Kwh)), nil
 }
 
 // UnmarshalJSON sets d to a copy of data.
-func (d *DataPoint) UnmarshalJSON(data []byte) error {
+func (d *Record) UnmarshalJSON(data []byte) error {
 	var decoded [2]float64
 	if err := json.Unmarshal(data, &decoded); err != nil {
 		return err
@@ -101,10 +101,10 @@ func FromJSON(jsonData io.Reader) (c *ConsumptionReport, err error) {
 	return c, err
 }
 
-// DataPoints returns all the consumption readings in the report.
+// Records returns all the consumption readings in the report.
 // The records are valid even if ErrorMissingRecord is returned to indicate
 // gaps in data.
-func (c *ConsumptionReport) DataPoints() (points []DataPoint, err error) {
+func (c *ConsumptionReport) Records() (points []Record, err error) {
 	// fixer := TimeFixer{}
 	missingRecords := false
 	for _, cons := range c.Hours.Consumptions {
@@ -119,7 +119,7 @@ func (c *ConsumptionReport) DataPoints() (points []DataPoint, err error) {
 			// }
 
 			// kwh := raw[1]
-			// points = append(points, DataPoint{Time: ts, Kwh: kwh})
+			// points = append(points, Record{Time: ts, Kwh: kwh})
 		}
 	}
 	if missingRecords {

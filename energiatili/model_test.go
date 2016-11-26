@@ -9,14 +9,14 @@ import (
 	"github.com/joneskoo/etget/energiatili"
 )
 
-func TestDataPointBidirectional(t *testing.T) {
-	dp := energiatili.DataPoint{Time: time.Date(2016, 11, 26, 6, 35, 0, 0, time.Local), Kwh: 1.5}
+func TestRecordBidirectional(t *testing.T) {
+	dp := energiatili.Record{Time: time.Date(2016, 11, 26, 6, 35, 0, 0, time.Local), Kwh: 1.5}
 	b, err := json.Marshal(dp)
 	if err != nil {
-		t.Fatalf("JSON marshal of DataPoint: %s", err)
+		t.Fatalf("JSON marshal of Record: %s", err)
 	}
 	t.Logf("%#v %q", dp, b)
-	var dp2 energiatili.DataPoint
+	var dp2 energiatili.Record
 	err = json.Unmarshal(b, &dp2)
 	if err != nil {
 		t.Fatalf("JSON unmarshal of marshal result: %s", err)
@@ -40,13 +40,13 @@ func TestModel(t *testing.T) {
 	}
 	cases := []struct {
 		in   int
-		want energiatili.DataPoint
+		want energiatili.Record
 	}{
-		{0, energiatili.DataPoint{Kwh: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
-		{1, energiatili.DataPoint{Kwh: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
+		{0, energiatili.Record{Kwh: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
+		{1, energiatili.Record{Kwh: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
 	}
 
-	equal := func(a, b energiatili.DataPoint) bool {
+	equal := func(a, b energiatili.Record) bool {
 		if a.Kwh != b.Kwh {
 			return false
 		}
@@ -56,7 +56,7 @@ func TestModel(t *testing.T) {
 		return true
 	}
 
-	points, err := report.DataPoints()
+	points, err := report.Records()
 	for _, c := range cases {
 		got := points[c.in]
 		want := c.want
