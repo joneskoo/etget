@@ -43,7 +43,7 @@ func (c ConsumptionReport) Records() (points []Record, err error) {
 			points = append(points, p)
 		}
 	}
-	sort.Sort(ByTime(points))
-	notz.FixDST(Records(points))
+	sort.Sort(byTime(points))
+	notz.FixDST(records(points))
 	return points, nil
 }
