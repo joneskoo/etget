@@ -26,12 +26,12 @@ type Record struct {
 	Value     float64
 }
 
-// MarshalJSON returns d as the JSON encoding of d.
+// MarshalJSON returns r as the JSON encoding of r.
 func (r Record) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf("[%d,%f]", formatEnergiatiliTime(r.Timestamp), r.Value)), nil
 }
 
-// UnmarshalJSON sets d to a copy of data.
+// UnmarshalJSON sets r to a copy of data.
 func (r *Record) UnmarshalJSON(data []byte) error {
 	var decoded [2]float64
 	if err := json.Unmarshal(data, &decoded); err != nil {
