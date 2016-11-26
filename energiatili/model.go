@@ -11,7 +11,7 @@ import (
 type ConsumptionReport struct {
 	Hours struct {
 		Temperature struct {
-			RawData [][2]float64 `json:"Data"`
+			Data []Record
 		}
 		Step struct {
 			TimeZoneInfo struct {
