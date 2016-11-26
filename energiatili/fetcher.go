@@ -2,7 +2,6 @@
 package energiatili
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,8 +10,6 @@ import (
 	"net/url"
 	"strings"
 )
-
-var errorStatusCode = errors.New("unexpected status code from server")
 
 // authCookieKey must be set in login or login is considered failed
 const authCookieKey = ".ASPXAUTH"
@@ -72,7 +69,7 @@ func (f *Client) requestConsumptionReport() (body []byte, err error) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		io.Copy(ioutil.Discard, resp.Body)
-		return nil, fmt.Errorf("unexpected status code %d from server", resp.StatusCode)
+		return nil, fmt.Errorf("want HTTP status code 200, got %d", resp.StatusCode)
 	}
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -112,7 +109,8 @@ func (f *Client) login() (err error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errorStatusCode
+		return fmt.Errorf("want HTTP status code 200, got %d", resp.StatusCode)
+
 	}
 	return nil
 }
