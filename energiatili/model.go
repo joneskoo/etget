@@ -2,6 +2,7 @@ package energiatili
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 )
@@ -44,8 +45,8 @@ type DataPoint struct {
 }
 
 // MarshalJSON returns d as the JSON encoding of d.
-func (d *DataPoint) MarshalJSON() ([]byte, error) {
-	return json.Marshal([]float64{float64(d.Time.Unix() * 1000), d.Kwh})
+func (d DataPoint) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("[%d,%f]", formatEnergiatiliTime(d.Time), d.Kwh)), nil
 }
 
 // UnmarshalJSON sets d to a copy of data.
@@ -68,7 +69,16 @@ func parseEnergiatiliTime(t float64) time.Time {
 	return time.Date(year, month, day, hour, min, sec, 0, helsinki)
 }
 
-var helsinki *time.Location
+// formatEnergiatiliTime encodes Helsinki time "unixMillis" ignoring time zone
+func formatEnergiatiliTime(t time.Time) int64 {
+	tHelsinki := t.In(helsinki)
+	year, _, day := tHelsinki.Date()
+	month := tHelsinki.Month()
+	hour, min, sec := tHelsinki.Clock()
+	return time.Date(year, month, day, hour, min, sec, 0, utc).Unix() * 1000
+}
+
+var utc, helsinki *time.Location
 
 func init() {
 	var err error
@@ -76,7 +86,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
+	utc, err = time.LoadLocation("UTC")
+	if err != nil {
+		panic(err)
+	}
 }
 
 // FromJSON parses consumption report JSON
