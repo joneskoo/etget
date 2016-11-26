@@ -30,7 +30,7 @@ type ConsumptionReport struct {
 				ReadingCounter int
 				Name           string
 				Resolution     string
-				RawData        [][2]float64 `json:"Data"`
+				Data           [][2]float64
 			}
 		}
 	}
@@ -59,7 +59,7 @@ func (c *ConsumptionReport) DataPoints() (points []DataPoint, err error) {
 	fixer := TimeFixer{}
 	missingRecords := false
 	for _, cons := range c.Hours.Consumptions {
-		for _, raw := range cons.Series.RawData {
+		for _, raw := range cons.Series.Data {
 			ts, err := fixer.ParseBrokenTime(raw[0])
 			if err != nil {
 				if err != ErrorMissingRecord {
