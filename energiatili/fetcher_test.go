@@ -2,7 +2,6 @@ package energiatili
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -109,19 +108,10 @@ More stuff
 	if err != nil {
 		t.Errorf("Got unexpected error from ConsumptionReport(): %v", err)
 	}
-	var dat struct {
-		First  string  `json:"first"`
-		Second float64 `json:"second"`
-	}
-	if err := json.Unmarshal(buf.Bytes(), &dat); err != nil {
-		t.Errorf("Decoding consumption report as JSON failed: %v", err)
+	want := `{"first": "value", "second": new Date(1234)} `
+	if buf.String() != want {
+		t.Errorf("ConsumptionReport(w) want %q written, got %q", want, buf.String())
 		t.FailNow()
-	}
-	if dat.First != "value" {
-		t.Errorf("Expected to get JSON with {\"first\":\"value\"}, got %#v", dat)
-	}
-	if dat.Second != 1234.0 {
-		t.Errorf("Expected to get JSON with {\"second\":\"1234\"}, got %#v", dat)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 )
 
 var errorStatusCode = errors.New("unexpected status code from server")
@@ -33,7 +34,7 @@ type Client struct {
 }
 
 // ConsumptionReport fetches the actual consumption report data (JSON)
-func (f *Client) ConsumptionReport(w io.Writer) (err error) {
+func (f *Client) ConsumptionReport(w io.Writer) error {
 	if !f.loggedIn {
 		if err := f.login(); err != nil {
 			// Login again and try again
@@ -42,12 +43,25 @@ func (f *Client) ConsumptionReport(w io.Writer) (err error) {
 			}
 		}
 	}
-	body, err := f.requestConsumptionReport()
+	bodyBytes, err := f.requestConsumptionReport()
 	if err != nil {
 		return err
 	}
-	_, err = html2json(string(body), w)
-	return err
+
+	// Find var model = ....
+	startData := "var model = "
+	endData := ";"
+	body := string(bodyBytes)
+	start := strings.Index(body, startData)
+	if start == -1 {
+		return fmt.Errorf("failed to find %q in body", startData)
+	}
+	end := start + strings.Index(body[start:], endData)
+	if end == -1 {
+		return fmt.Errorf("unterminated %q in body", startData)
+	}
+	fmt.Fprint(w, body[start+len(startData):end])
+	return nil
 }
 
 func (f *Client) requestConsumptionReport() (body []byte, err error) {

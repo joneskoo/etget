@@ -30,7 +30,7 @@ type ConsumptionReport struct {
 				ReadingCounter int
 				Name           string
 				Resolution     string
-				Data           [][2]float64
+				Data           []DataPoint
 			}
 		}
 	}
@@ -41,6 +41,42 @@ type ConsumptionReport struct {
 type DataPoint struct {
 	Time time.Time
 	Kwh  float64
+}
+
+// MarshalJSON returns d as the JSON encoding of d.
+func (d *DataPoint) MarshalJSON() ([]byte, error) {
+	return json.Marshal([]float64{float64(d.Time.Unix() * 1000), d.Kwh})
+}
+
+// UnmarshalJSON sets d to a copy of data.
+func (d *DataPoint) UnmarshalJSON(data []byte) error {
+	var decoded [2]float64
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	d.Time = parseEnergiatiliTime(decoded[0])
+	d.Kwh = decoded[1]
+	return nil
+}
+
+// parseEnergiatiliTime decodes "unixMillis" ignoring time zone and cast to Helsinki time
+func parseEnergiatiliTime(t float64) time.Time {
+	ts := time.Unix(int64(t/1000), 0).UTC()
+	year, _, day := ts.Date()
+	month := ts.Month()
+	hour, min, sec := ts.Clock()
+	return time.Date(year, month, day, hour, min, sec, 0, helsinki)
+}
+
+var helsinki *time.Location
+
+func init() {
+	var err error
+	helsinki, err = time.LoadLocation("Europe/Helsinki")
+	if err != nil {
+		panic(err)
+	}
+
 }
 
 // FromJSON parses consumption report JSON
@@ -56,20 +92,21 @@ func FromJSON(jsonData io.Reader) (c *ConsumptionReport, err error) {
 // The records are valid even if ErrorMissingRecord is returned to indicate
 // gaps in data.
 func (c *ConsumptionReport) DataPoints() (points []DataPoint, err error) {
-	fixer := TimeFixer{}
+	// fixer := TimeFixer{}
 	missingRecords := false
 	for _, cons := range c.Hours.Consumptions {
-		for _, raw := range cons.Series.Data {
-			ts, err := fixer.ParseBrokenTime(raw[0])
-			if err != nil {
-				if err != ErrorMissingRecord {
-					return nil, err
-				}
-				missingRecords = true
-			}
+		for _, p := range cons.Series.Data {
+			points = append(points, p)
+			// ts, err := fixer.ParseBrokenTime(raw[0])
+			// if err != nil {
+			// 	if err != ErrorMissingRecord {
+			// 		return nil, err
+			// 	}
+			// 	missingRecords = true
+			// }
 
-			kwh := raw[1]
-			points = append(points, DataPoint{Time: ts, Kwh: kwh})
+			// kwh := raw[1]
+			// points = append(points, DataPoint{Time: ts, Kwh: kwh})
 		}
 	}
 	if missingRecords {
