@@ -30,6 +30,8 @@ type Client struct {
 	loggedIn bool
 }
 
+var newDateReplacer = strings.NewReplacer("new Date(", "", ")", "")
+
 // ConsumptionReport fetches the actual consumption report data (JSON)
 func (f *Client) ConsumptionReport(w io.Writer) error {
 	if !f.loggedIn {
@@ -57,7 +59,7 @@ func (f *Client) ConsumptionReport(w io.Writer) error {
 	if end == -1 {
 		return fmt.Errorf("unterminated %q in body", startData)
 	}
-	fmt.Fprint(w, body[start+len(startData):end])
+	newDateReplacer.WriteString(w, body[start+len(startData):end])
 	return nil
 }
 
