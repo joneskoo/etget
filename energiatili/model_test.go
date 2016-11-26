@@ -1,9 +1,11 @@
-package energiatili
+package energiatili_test
 
 import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/joneskoo/etget/energiatili"
 )
 
 func mustTime(t time.Time, err error) time.Time {
@@ -14,19 +16,19 @@ func mustTime(t time.Time, err error) time.Time {
 }
 
 func TestModel(t *testing.T) {
-	report, err := FromJSON(strings.NewReader(sampleJSONData))
+	report, err := energiatili.FromJSON(strings.NewReader(sampleJSONData))
 	if err != nil {
 		t.Errorf("FromJSON(): %v", err)
 	}
 	cases := []struct {
 		in   int
-		want DataPoint
+		want energiatili.DataPoint
 	}{
-		{0, DataPoint{Kwh: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
-		{1, DataPoint{Kwh: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
+		{0, energiatili.DataPoint{Kwh: 0, Time: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
+		{1, energiatili.DataPoint{Kwh: 2.646, Time: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
 	}
 
-	equal := func(a, b DataPoint) bool {
+	equal := func(a, b energiatili.DataPoint) bool {
 		if a.Kwh != b.Kwh {
 			return false
 		}

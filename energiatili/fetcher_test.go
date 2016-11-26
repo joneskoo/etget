@@ -1,11 +1,14 @@
-package energiatili
+package energiatili_test
 
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/joneskoo/etget/energiatili"
 )
 
 // var runIntegrationTests = flag.Bool("integration", false, "Run the integration tests (in addition to the unit tests)")
@@ -22,12 +25,12 @@ func TestLoginStatus(t *testing.T) {
 	ts.statusCode = 403
 	defer ts.Close()
 
-	fetcher := Client{
+	fetcher := energiatili.Client{
 		GetUsernamePassword:  mockGetUsernamePassword,
 		LoginURL:             ts.URL,
 		ConsumptionReportURL: ts.URL,
 	}
-	err := fetcher.login()
+	err := fetcher.ConsumptionReport(ioutil.Discard)
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
 	}
@@ -43,12 +46,12 @@ func TestNoResponse(t *testing.T) {
 	})
 	defer ts.Close()
 
-	fetcher := Client{
+	fetcher := energiatili.Client{
 		GetUsernamePassword:  mockGetUsernamePassword,
 		LoginURL:             ts.URL,
 		ConsumptionReportURL: ts.URL,
 	}
-	err := fetcher.login()
+	err := fetcher.ConsumptionReport(ioutil.Discard)
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
 	}
@@ -61,23 +64,23 @@ func TestLoginForm(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	fetcher := Client{
+	fetcher := energiatili.Client{
 		GetUsernamePassword:  mockGetUsernamePassword,
 		LoginURL:             ts.URL,
 		ConsumptionReportURL: ts.URL,
 	}
-	fetcher.login()
-	if len(ts.requests) != 1 {
-		t.Errorf("Expected requests count=1, got count=%v", len(ts.requests))
+	fetcher.ConsumptionReport(ioutil.Discard)
+	if len(ts.requests) != 2 {
+		t.Errorf("want 2 requests, got count=%d", len(ts.requests))
 	}
-	req := ts.requests[len(ts.requests)-1]
+	req := ts.requests[0] // login
 	expectedForm := map[string]string{
 		"username": testLoginUser,
 		"password": testLoginPassword,
 	}
 	for key, want := range expectedForm {
 		if req.FormValue(key) != want {
-			t.Errorf("Expected request form %v=%v, got %v", key, want, req.FormValue(key))
+			t.Errorf("want format %v=%v, got %q", key, want, req.FormValue(key))
 		}
 	}
 }
@@ -88,14 +91,10 @@ func TestConsumptionReport(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	fetcher := Client{
+	fetcher := energiatili.Client{
 		GetUsernamePassword:  mockGetUsernamePassword,
 		LoginURL:             ts.URL,
 		ConsumptionReportURL: ts.URL,
-	}
-	err := fetcher.login()
-	if err != nil {
-		t.Errorf("Got unexpected error from Login(): %v", err)
 	}
 	// Mock response that looks like the real thing
 	ts.body = `<html>
@@ -104,7 +103,7 @@ Then magically, var model = {"first": "value", "second": new Date(1234)} ;
 More stuff
 </html>`
 	buf := &bytes.Buffer{}
-	err = fetcher.ConsumptionReport(buf)
+	err := fetcher.ConsumptionReport(buf)
 	if err != nil {
 		t.Errorf("Got unexpected error from ConsumptionReport(): %v", err)
 	}

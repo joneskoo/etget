@@ -1,8 +1,10 @@
-package energiatili
+package energiatili_test
 
 import (
 	"testing"
 	"time"
+
+	"github.com/joneskoo/etget/energiatili"
 )
 
 func must(t time.Time, err error) time.Time {
@@ -59,7 +61,7 @@ func TestTimeFixer(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		var fixer TimeFixer
+		var fixer energiatili.TimeFixer
 		for _, step := range tc {
 			ts, err := fixer.ParseBrokenTime(step.in)
 			if err != nil {
