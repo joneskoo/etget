@@ -1,4 +1,6 @@
-package main
+// Package keyring implements a poor man's credential store backed by JSON file.
+// Using it will store passwords plaintext on disk. Probably don't use it.
+package keyring
 
 import (
 	"encoding/json"
@@ -21,9 +23,9 @@ type CredentialStore struct {
 	cacheReturned bool
 }
 
-// UsernamePassword returns username and password from cache. If called again,
-// it will assume cache is invalid and prompt for new credentials, storing new
-// value in cache.
+// UsernamePassword returns username and password from cache or prompts user.
+// After first call, it will assume cache is invalid and prompt for new
+// credentials, storing new value in cache.
 func (c *CredentialStore) UsernamePassword() (username, password string, err error) {
 	if !c.cacheReturned {
 		c.cacheReturned = true

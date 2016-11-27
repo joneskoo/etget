@@ -1,5 +1,4 @@
-// et-import imports data from www.energiatili.fi internal JSON
-// format to PostgreSQL.
+// The import-energiatili command imports data from www.energiatili.fi.
 package main
 
 import (

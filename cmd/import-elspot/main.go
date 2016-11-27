@@ -1,6 +1,4 @@
-// elspot-parse imports a ".xls" market data file from Nordpool to PostgreSQL.
-// Actually it's not an Excel document but a HTML table, that happens to load
-// in Excel. Luckily it's easier to parse than the Excel file would have been.
+// The import-elspot command loads market data file from Nordpool.
 package main
 
 import (

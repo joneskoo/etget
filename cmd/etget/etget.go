@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joneskoo/etget/energiatili"
+	"github.com/joneskoo/etget/keyring"
 )
 
 func main() {
@@ -13,7 +14,7 @@ func main() {
 	output := flag.String("output", "./power.json", "File consumption data is written in")
 	flag.Parse()
 
-	cs := CredentialStore{
+	cs := keyring.CredentialStore{
 		File:   *credfile,
 		Domain: "www.energiatili.fi",
 	}
