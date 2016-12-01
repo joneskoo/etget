@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -19,8 +22,8 @@ import (
 const timeLayout = "02-01-2006 15"
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "Usage: %s FILENAME\n\n", os.Args[0])
-	fmt.Fprintf(os.Stderr, "where FILENAME is elspot 'xls' file\n")
+	fmt.Fprintf(os.Stderr, "Usage: %s ELSPOT\n\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "   ELSPOT	elspot 'xls' file name or URL\n\n")
 	flag.PrintDefaults()
 	os.Exit(1)
 }
@@ -39,14 +42,29 @@ func main() {
 
 	progress := timer{time.Now()}
 
-	f, err := os.OpenFile(flag.Arg(0), os.O_RDONLY, 0)
-	if err != nil {
-		log.Fatalf("ERROR opening data file: %s", err)
+	var src io.ReadCloser
+
+	// If ELSPOT is a URL, download it. If not, assume it's a file.
+	if u, err := url.Parse(flag.Arg(0)); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+		resp, err := http.Get(flag.Arg(0))
+		if err != nil {
+			log.Fatalf("ERROR opening URL: %s", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			log.Fatalf("ERROR got HTTP status code: %d, want %d", resp.StatusCode, http.StatusOK)
+		}
+		src = resp.Body
+	} else {
+		src, err = os.OpenFile(flag.Arg(0), os.O_RDONLY, 0)
+		if err != nil {
+			log.Fatalf("ERROR opening data file: %s", err)
+		}
 	}
+	defer src.Close()
 
 	progress.Track("open file")
 
-	tables, err := htmltable.Parse(f)
+	tables, err := htmltable.Parse(src)
 	if err != nil {
 		log.Fatalf("ERROR parsing HTML table: %s", err)
 	}
