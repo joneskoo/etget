@@ -5,27 +5,46 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"io"
 	"log"
-	"os"
 
 	"encoding/json"
 
 	"github.com/joneskoo/etget/energiatili"
+	"github.com/joneskoo/etget/keyring"
 	"github.com/lib/pq"
 )
 
 func main() {
-	input := flag.String("input", "power.json", "input file name")
+	credfile := flag.String("credfile", "./credentials.json", "File username/password are saved in (plaintext)")
 	connstring := flag.String("connstring", "sslmode=disable", "https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING")
 	flag.Parse()
 
-	f, err := os.OpenFile(*input, os.O_RDONLY, 0)
-	if err != nil {
-		log.Fatalf("ERROR opening data file: %s", err)
+	cs := keyring.CredentialStore{
+		File:   *credfile,
+		Domain: "www.energiatili.fi",
 	}
 
+	client := &energiatili.Client{
+		LoginURL:             "https://www.energiatili.fi/Extranet/Extranet/LogIn",
+		ConsumptionReportURL: "https://www.energiatili.fi/Reporting/CustomerConsumption/UserConsumptionReport",
+		GetUsernamePassword:  cs.UsernamePassword,
+	}
+
+	log.Println("Downloading consumption data…")
+	var err error
+
+	r, w := io.Pipe()
+
+	go func() {
+		defer w.Close()
+		if err := client.ConsumptionReport(w); err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
 	var consumptionreport energiatili.ConsumptionReport
-	decoder := json.NewDecoder(f)
+	decoder := json.NewDecoder(r)
 	err = decoder.Decode(&consumptionreport)
 	if err != nil {
 		log.Fatalf("ERROR parsing JSON structure: %s", err)
@@ -41,7 +60,7 @@ func main() {
 		log.Fatalf("ERROR importing to database: %s", err)
 	}
 
-	fmt.Printf("Loaded %d new rows\n", rowsAffected)
+	log.Printf("Loaded %d new rows", rowsAffected)
 }
 
 func importPoints(connstring string, points []energiatili.Record) (rowsAffected int64, err error) {
