@@ -45,5 +45,15 @@ func (c ConsumptionReport) Records() (points []Record, err error) {
 	}
 	sort.Sort(byTime(points))
 	notz.FixDST(records(points))
+	points = trimTrailingZeros(points)
 	return points, nil
+}
+
+func trimTrailingZeros(p []Record) []Record {
+	for i := len(p) - 1; i >= 0; i-- {
+		if p[i].Value != 0 {
+			return p[0 : i+1]
+		}
+	}
+	return nil
 }
