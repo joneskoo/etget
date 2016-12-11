@@ -107,7 +107,7 @@ More stuff
 	if err != nil {
 		t.Errorf("Got unexpected error from ConsumptionReport(): %v", err)
 	}
-	want := `{"first": "value", "second": new Date(1234)} `
+	want := `{"first": "value", "second": 1234} `
 	if buf.String() != want {
 		t.Errorf("ConsumptionReport(w) want %q written, got %q", want, buf.String())
 		t.FailNow()
