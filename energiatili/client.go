@@ -33,16 +33,16 @@ type Client struct {
 var newDateReplacer = strings.NewReplacer("new Date(", "", ")", "")
 
 // ConsumptionReport fetches the actual consumption report data (JSON)
-func (f *Client) ConsumptionReport(w io.Writer) error {
-	if !f.loggedIn {
-		if err := f.login(); err != nil {
+func (c *Client) ConsumptionReport(w io.Writer) error {
+	if !c.loggedIn {
+		if err := c.login(); err != nil {
 			// Login again and try again
-			if err := f.login(); err != nil {
+			if err := c.login(); err != nil {
 				return err
 			}
 		}
 	}
-	bodyBytes, err := f.requestConsumptionReport()
+	bodyBytes, err := c.requestConsumptionReport()
 	if err != nil {
 		return err
 	}
@@ -63,8 +63,8 @@ func (f *Client) ConsumptionReport(w io.Writer) error {
 	return nil
 }
 
-func (f *Client) requestConsumptionReport() (body []byte, err error) {
-	resp, err := f.cl.Get(f.ConsumptionReportURL)
+func (c *Client) requestConsumptionReport() (body []byte, err error) {
+	resp, err := c.cl.Get(c.ConsumptionReportURL)
 	if err != nil {
 		return
 	}
@@ -80,12 +80,12 @@ func (f *Client) requestConsumptionReport() (body []byte, err error) {
 	return body, nil
 }
 
-func (f *Client) login() (err error) {
-	if f.cl == nil {
+func (c *Client) login() (err error) {
+	if c.cl == nil {
 		jar, _ := cookiejar.New(nil)
-		f.cl = &http.Client{Jar: jar}
+		c.cl = &http.Client{Jar: jar}
 	}
-	username, password, err := f.GetUsernamePassword()
+	username, password, err := c.GetUsernamePassword()
 	if err != nil {
 		return err
 	}
@@ -93,21 +93,21 @@ func (f *Client) login() (err error) {
 		"username": []string{username},
 		"password": []string{password},
 	}
-	resp, err := f.cl.PostForm(f.LoginURL, form)
+	resp, err := c.cl.PostForm(c.LoginURL, form)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 	io.Copy(ioutil.Discard, resp.Body)
 
-	url, _ := url.Parse(f.LoginURL)
-	for _, cookie := range f.cl.Jar.Cookies(url) {
+	url, _ := url.Parse(c.LoginURL)
+	for _, cookie := range c.cl.Jar.Cookies(url) {
 		if cookie.Name == authCookieKey {
-			f.loggedIn = true
+			c.loggedIn = true
 		}
 	}
-	if !f.loggedIn {
-		return fmt.Errorf("login did not return authentication cookie %s", authCookieKey)
+	if !c.loggedIn {
+		return fmt.Errorf("login did not set authentication cookie %s", authCookieKey)
 	}
 
 	if resp.StatusCode != http.StatusOK {
