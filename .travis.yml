@@ -2,12 +2,9 @@ language: go
 go:
   - 1.13
 
-before_install:
-    - go get github.com/mattn/goveralls
-    - go get golang.org/x/tools/cmd/cover
-
 script:
-    - ./test.sh
+    - go test -covermode=count -coverprofile=profile.out ./...
+    - go tool cover -func profile.out
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
