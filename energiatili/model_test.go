@@ -28,6 +28,17 @@ func TestModel(t *testing.T) {
 	}{
 		{0, energiatili.Record{Value: 0, Timestamp: mustTime(time.Parse(time.RFC3339, "2012-08-02T20:00:00Z"))}},
 		{1, energiatili.Record{Value: 2.646, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-09-02T21:00:00Z"))}},
+		{2, energiatili.Record{Value: 1.856, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-09-02T22:00:00Z"))}},
+		{3, energiatili.Record{Value: 0.547, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-09-02T23:00:00Z"))}},
+		{4, energiatili.Record{Value: 0.635, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-09-03T00:00:00Z"))}},
+		{5, energiatili.Record{Value: 0.827, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-09-03T01:00:00Z"))}},
+		{6, energiatili.Record{Value: 0.358, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-09-03T02:00:00Z"))}},
+		{7, energiatili.Record{Value: 2.646, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-10-25T22:00:00Z"))}},
+		{8, energiatili.Record{Value: 1.856, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-10-25T23:00:00Z"))}},
+		{9, energiatili.Record{Value: 0.547, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-10-26T00:00:00Z"))}},
+		{10, energiatili.Record{Value: 0.635, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-10-26T01:00:00Z"))}},
+		{11, energiatili.Record{Value: 0.827, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-10-26T02:00:00Z"))}},
+		{12, energiatili.Record{Value: 0.358, Timestamp: mustTime(time.Parse(time.RFC3339, "2014-10-26T03:00:00Z"))}},
 	}
 
 	equal := func(a, b energiatili.Record) bool {
@@ -41,6 +52,9 @@ func TestModel(t *testing.T) {
 	}
 
 	points, err := report.Records()
+	if err != nil {
+		t.Fatalf("report.Records() returned error: %v", err)
+	}
 	for _, c := range cases {
 		got := points[c.in]
 		want := c.want
@@ -147,6 +161,30 @@ var sampleJSONData = `
             ],
             [
               1409720400000,
+              0.358
+            ],
+            [
+              1414285200000,
+              2.646
+            ],
+            [
+              1414288800000,
+              1.856
+            ],
+            [
+              1414292400000,
+              0.547
+            ],
+            [
+              1414292400000,
+              0.635
+            ],
+            [
+              1414296000000,
+              0.827
+            ],
+            [
+              1414299600000,
               0.358
             ]
           ],
