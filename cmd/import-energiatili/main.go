@@ -2,11 +2,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"fmt"
-	"io"
 	"log"
+	"os"
+	"time"
 
 	"encoding/json"
 
@@ -20,36 +22,50 @@ func main() {
 	connstring := flag.String("connstring", "sslmode=disable", "https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING")
 	flag.Parse()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	cs := keyring.CredentialStore{
 		File:   *credfile,
 		Domain: "www.energiatili.fi",
 	}
 
 	client := &energiatili.Client{
-		LoginURL:             "https://www.energiatili.fi/Extranet/Extranet/LogIn",
-		ConsumptionReportURL: "https://www.energiatili.fi/Reporting/CustomerConsumption/UserConsumptionReport",
-		GetUsernamePassword:  cs.UsernamePassword,
+		UsernamePasswordFunc: cs.UsernamePassword,
 	}
 
-	log.Println("Downloading consumption data…")
+	consumptionReportFile := "consumptionreport.json"
+
+	// Download data from API
+	var f *os.File
 	var err error
 
-	r, w := io.Pipe()
-
-	go func() {
-		defer w.Close()
-		if err := client.ConsumptionReport(w); err != nil {
+	f, err = os.Open(consumptionReportFile)
+	if os.IsNotExist(err) {
+		log.Println("Downloading consumption data…")
+		f, err = os.Create(consumptionReportFile)
+		if err != nil {
+			panic(err)
+		}
+		if err := client.ConsumptionReport(ctx, f); err != nil {
 			log.Fatalln(err)
 		}
-	}()
+		f.Seek(0, 0)
+	} else {
+		log.Println("Using cached consumption data:", consumptionReportFile)
+	}
+	defer f.Close()
+
+	if err != nil {
+		panic(err)
+	}
 
 	var consumptionreport energiatili.ConsumptionReport
-	decoder := json.NewDecoder(r)
+	decoder := json.NewDecoder(f)
 	err = decoder.Decode(&consumptionreport)
 	if err != nil {
 		log.Fatalf("ERROR parsing JSON structure: %s", err)
 	}
-
 	points, err := consumptionreport.Records()
 	if err != nil {
 		log.Fatalf("ERROR parsing data: %s", err)
