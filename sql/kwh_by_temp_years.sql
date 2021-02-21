@@ -30,6 +30,28 @@ CREATE OR REPLACE VIEW kwh_by_temp_years AS (
 	ORDER BY 1,3
 );
 
+-- SELECT
+--         year,
+--         MAX(CASE WHEN temp_range_lo = -25 THEN kwh_avg END) "-25°C…-20°C",
+--         MAX(CASE WHEN temp_range_lo = -20 THEN kwh_avg END) "-20°C…-15°C",
+--         MAX(CASE WHEN temp_range_lo = -15 THEN kwh_avg END) "-15°C…-10°C",
+--         MAX(CASE WHEN temp_range_lo = -10 THEN kwh_avg END) "-10°C…-5°C",
+--         MAX(CASE WHEN temp_range_lo = -5 THEN kwh_avg END) "-5°C…0°C",
+--         MAX(CASE WHEN temp_range_lo = 0 THEN kwh_avg END) "+0°C…+5°C",
+--         MAX(CASE WHEN temp_range_lo = 5 THEN kwh_avg END) "+5°C…+10°C",
+--         MAX(CASE WHEN temp_range_lo = 10 THEN kwh_avg END) "+10°C…+15°C",
+--         MAX(CASE WHEN temp_range_lo = 15 THEN kwh_avg END) "+15°C…+20°C",
+--         MAX(CASE WHEN temp_range_lo = 20 THEN kwh_avg END) "+20°C…+25°C"
+-- FROM kwh_by_temp_years
+--  year | -25°C…-20°C | -20°C…-15°C | -15°C…-10°C | -10°C…-5°C | -5°C…0°C | +0°C…+5°C | +5°C…+10°C | +10°C…+15°C | +15°C…+20°C | +20°C…+25°C
+-- ------+-------------+-------------+-------------+------------+----------+-----------+------------+-------------+-------------+-------------
+--  2018 |             |       4.885 |             |      3.269 |    2.909 |     2.297 |      2.123 |       1.676 |       1.632 |
+--  2019 |       5.080 |       4.554 |       3.834 |      3.163 |    2.578 |     2.169 |      1.583 |       1.136 |       1.064 |       0.969
+--  2020 |             |             |       3.696 |      3.211 |    2.585 |     2.148 |      1.567 |       1.155 |       1.117 |       1.219
+--  2021 |       4.785 |       4.556 |       3.683 |      3.353 |    2.831 |           |            |             |             |
+-- (4 rows)
+
+
 -- DROP TABLE IF EXISTS willab_weather;
 -- CREATE TABLE willab_weather (
 -- 	measuretime timestamp with time zone,
