@@ -94,7 +94,7 @@ func importPoints(connstring string, points []energiatili.Record) (rowsAffected 
 	}
 
 	// Ensure table exists
-	res, err := db.Exec(createTable)
+	_, err = db.Exec(createTable)
 	if err != nil {
 		return 0, fmt.Errorf("ensure table exists: %s", err)
 	}
@@ -131,7 +131,7 @@ func importPoints(connstring string, points []energiatili.Record) (rowsAffected 
 	}
 
 	// Copy data from temporary table into target
-	res, err = txn.Exec(fmt.Sprintf("INSERT INTO %s (ts, kwh) SELECT ts, kwh FROM %s ON CONFLICT DO NOTHING", pq.QuoteIdentifier(targetTable), pq.QuoteIdentifier(tmpTable)))
+	res, err := txn.Exec(fmt.Sprintf("INSERT INTO %s (ts, kwh) SELECT ts, kwh FROM %s ON CONFLICT DO NOTHING", pq.QuoteIdentifier(targetTable), pq.QuoteIdentifier(tmpTable)))
 	if err != nil {
 		return 0, fmt.Errorf("load data from temporary table: %s", err)
 	}

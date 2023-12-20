@@ -57,12 +57,7 @@ func getElementsByName(n *html.Node, name string) (elements []*html.Node) {
 		if c.Data == name {
 			elements = append(elements, c)
 		}
-		for _, el := range getElementsByName(c, name) {
-			// buf := new(bytes.Buffer)
-			// html.Render(buf, c)
-			// fmt.Printf("name=%s, c=%s\n", name, buf)
-			elements = append(elements, el)
-		}
+		elements = append(elements, getElementsByName(c, name)...)
 	}
 	return
 }
@@ -73,7 +68,7 @@ func getTextContent(n *html.Node) string {
 		if c.Type == html.TextNode {
 			fmt.Fprintf(buf, c.Data)
 		}
-		fmt.Fprintf(buf, getTextContent(c))
+		fmt.Fprint(buf, getTextContent(c))
 	}
 	return buf.String()
 }

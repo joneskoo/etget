@@ -5,10 +5,10 @@ package keyring
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // CredentialStore stores secrets insecurely in a file
@@ -60,7 +60,7 @@ func promptCredentials(domain string) (username, password string, err error) {
 	}
 
 	fmt.Println(username, " password:")
-	passwordBytes, err := terminal.ReadPassword(0)
+	passwordBytes, err := term.ReadPassword(0)
 	if err != nil {
 		return
 	}
@@ -74,7 +74,7 @@ func readCachedCredentials(filename string) (username, password string, err erro
 		b []byte
 	)
 
-	if b, err = ioutil.ReadFile(filename); err != nil {
+	if b, err = os.ReadFile(filename); err != nil {
 		return
 	}
 
@@ -93,7 +93,7 @@ func writeCachedCredentials(filename, username, password string) (err error) {
 	if b, err = json.MarshalIndent(c, "", jsonIndent); err != nil {
 		return
 	}
-	if err = ioutil.WriteFile(filename, b, 0600); err != nil {
+	if err = os.WriteFile(filename, b, 0600); err != nil {
 		return
 	}
 	return

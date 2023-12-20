@@ -239,15 +239,11 @@ func parseEnergiatiliTime(t float64) time.Time {
 	return time.Date(year, month, day, hour, min, sec, 0, helsinki)
 }
 
-var utc, helsinki *time.Location
+var helsinki *time.Location
 
 func init() {
 	var err error
 	helsinki, err = time.LoadLocation("Europe/Helsinki")
-	if err != nil {
-		panic(err)
-	}
-	utc, err = time.LoadLocation("UTC")
 	if err != nil {
 		panic(err)
 	}

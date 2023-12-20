@@ -48,23 +48,23 @@ func TestParse(t *testing.T) {
 </html>
 `
 	want := []htmltable.Table{
-		htmltable.Table{
+		{
 			Headers: [][]string{
-				[]string{"ASDF"},
-				[]string{"FOO BAR"},
-				[]string{"", "H", "SYS", "S", "FOO"},
+				{"ASDF"},
+				{"FOO BAR"},
+				{"", "H", "SYS", "S", "FOO"},
 			},
 			Rows: [][]string{
-				[]string{"01-01-2016", "00\u00A0-\u00A001", "16,39"},
-				[]string{"01-01-2016", "01\u00A0-\u00A002", "16,04"},
+				{"01-01-2016", "00\u00A0-\u00A001", "16,39"},
+				{"01-01-2016", "01\u00A0-\u00A002", "16,04"},
 			},
 		},
-		htmltable.Table{
+		{
 			Headers: [][]string{
-				[]string{"1"},
+				{"1"},
 			},
 			Rows: [][]string{
-				[]string{"2"},
+				{"2"},
 			},
 		},
 	}

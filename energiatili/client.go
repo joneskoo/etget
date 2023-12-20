@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -62,10 +61,10 @@ func (c *Client) ConsumptionReport(ctx context.Context, w io.Writer) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		io.Copy(ioutil.Discard, resp.Body)
+		io.Copy(io.Discard, resp.Body)
 		return fmt.Errorf("want HTTP status code 200, got %d", resp.StatusCode)
 	}
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	bodyBytes, _ := io.ReadAll(resp.Body)
 
 	// Find var model = ....
 	startData := "var model = "
@@ -106,7 +105,7 @@ func (c *Client) login(ctx context.Context) (err error) {
 		return err
 	}
 	defer resp.Body.Close()
-	io.Copy(ioutil.Discard, resp.Body)
+	io.Copy(io.Discard, resp.Body)
 
 	u, err := url.Parse(endpointLogin)
 	if err != nil {
