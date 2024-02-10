@@ -144,7 +144,7 @@ func (t *timer) Track(msg string) {
 	if t.IsZero() {
 		t.Time = time.Now()
 	}
-	fmt.Println(msg, "took", time.Now().Sub(t.Time))
+	fmt.Println(msg, "took", time.Since(t.Time))
 	t.Time = time.Now()
 }
 

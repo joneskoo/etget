@@ -3,7 +3,7 @@ package energiatili_test
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -29,7 +29,7 @@ func TestLoginStatus(t *testing.T) {
 		UsernamePasswordFunc: mockUsernamePasswordFunc,
 		Transport:            ts,
 	}
-	err := fetcher.ConsumptionReport(context.TODO(), ioutil.Discard)
+	err := fetcher.ConsumptionReport(context.TODO(), io.Discard)
 	if err == nil {
 		t.Error("Login did not return error; expected error when HTTP status 403")
 	}
@@ -47,7 +47,7 @@ func TestLoginForm(t *testing.T) {
 		UsernamePasswordFunc: mockUsernamePasswordFunc,
 		Transport:            ts,
 	}
-	fetcher.ConsumptionReport(context.TODO(), ioutil.Discard)
+	fetcher.ConsumptionReport(context.TODO(), io.Discard)
 	if len(ts.requests) != 2 {
 		t.Errorf("want 2 requests, got count=%d", len(ts.requests))
 	}
@@ -93,19 +93,16 @@ More stuff
 }
 
 type testServer struct {
-	oldLoginURL       string
-	oldConsumptionURL string
-	handler           http.Handler
-	statusCode        int
-	body              string
-	requests          []http.Request
+	statusCode int
+	body       string
+	requests   []http.Request
 }
 
 // HTTP 200 ok with simple text body
 func (t *testServer) RoundTrip(req *http.Request) (res *http.Response, err error) {
 	res = &http.Response{
 		StatusCode: t.statusCode,
-		Body:       ioutil.NopCloser(strings.NewReader(t.body)),
+		Body:       io.NopCloser(strings.NewReader(t.body)),
 		Header:     make(http.Header),
 	}
 	res.Header.Set("Set-Cookie", ".ASPXAUTH=test_auth_value")
